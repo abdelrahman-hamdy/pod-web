@@ -5,27 +5,29 @@
 
 @php
     $cardClass = $compact 
-        ? 'block group bg-slate-50 border border-slate-100 rounded-lg p-4 hover:border-indigo-300 hover:bg-slate-100 transition-all cursor-pointer'
-        : 'bg-white rounded-xl shadow-sm border border-slate-100 p-6';
+        ? 'block w-full group bg-slate-50 border border-slate-100 rounded-lg p-4 hover:border-indigo-300 hover:bg-slate-100 transition-all cursor-pointer'
+        : 'block w-full bg-white rounded-xl shadow-sm border border-slate-100 p-6 hover:border-indigo-300 transition-all cursor-pointer';
 @endphp
 
 <a href="{{ route('posts.show', $post) }}" class="{{ $cardClass }}">
-    <div class="flex items-start space-x-3">
-        <x-avatar 
-            :src="$post->user->avatar ?? null"
-            :name="$post->user->name ?? 'User'"
-            size="sm"
-            :color="$post->user->avatar_color ?? null" />
+    <div class="flex items-start space-x-3 w-full">
+        <div class="flex-shrink-0">
+            <x-avatar 
+                :src="$post->user->avatar ?? null"
+                :name="$post->user->name ?? 'User'"
+                size="sm"
+                :color="$post->user->avatar_color ?? null" />
+        </div>
         
         <div class="flex-1 min-w-0">
             <div class="flex items-center space-x-2 mb-2">
-                <h4 class="font-medium text-slate-800 group-hover:text-indigo-600 transition-colors">{{ $post->user->name ?? 'User' }}</h4>
+                <span class="font-medium text-slate-800">{{ $post->user->name ?? 'User' }}</span>
                 <span class="text-sm text-slate-500">•</span>
                 <span class="text-sm text-slate-500">{{ $post->created_at->diffForHumans() }}</span>
             </div>
             
             @if($post->title)
-                <h3 class="text-sm font-semibold text-slate-800 mb-2 group-hover:text-indigo-600 transition-colors">{{ $post->title }}</h3>
+                <h3 class="text-sm font-semibold text-slate-800 mb-2">{{ $post->title }}</h3>
             @endif
             
             <p class="text-slate-600 text-sm line-clamp-2 mb-3">

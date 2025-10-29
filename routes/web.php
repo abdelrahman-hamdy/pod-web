@@ -98,13 +98,13 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile/{id}', [ProfileController::class, 'show'])->name('profile.show.other');
     Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
     Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    
+
     // Experience routes
     Route::post('/profile/experiences', [ProfileController::class, 'storeExperience'])->name('experience.store');
     Route::get('/profile/experiences/{id}', [ProfileController::class, 'getExperience'])->name('experience.get');
     Route::put('/profile/experiences/{id}', [ProfileController::class, 'updateExperience'])->name('experience.update');
     Route::delete('/profile/experiences/{id}', [ProfileController::class, 'deleteExperience'])->name('experience.delete');
-    
+
     // Portfolio routes
     Route::post('/profile/portfolios', [ProfileController::class, 'storePortfolio'])->name('portfolio.store');
     Route::get('/profile/portfolios/{id}', [ProfileController::class, 'getPortfolio'])->name('portfolio.get');
@@ -169,7 +169,8 @@ Route::middleware('auth')->group(function () {
     Route::patch('/notifications/mark-all-as-read', [NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-as-read');
 
     // Search
-    Route::get('/search', [SearchController::class, 'index'])->name('search');
+    Route::get('/search', [SearchController::class, 'searchResults'])->name('search.results');
+    Route::get('/search/live', [SearchController::class, 'liveSearch'])->name('search.live');
     Route::get('/search/suggestions', [SearchController::class, 'suggestions'])->name('search.suggestions');
     Route::get('/search/advanced', [SearchController::class, 'advanced'])->name('search.advanced');
 
@@ -184,11 +185,6 @@ Route::middleware('auth')->group(function () {
         Route::get('/settings', [AdminController::class, 'settings'])->name('settings');
         Route::post('/settings', [AdminController::class, 'updateSettings'])->name('settings.update');
     });
-
-    // Search System
-    Route::get('/search', [SearchController::class, 'index'])->name('search.index');
-    Route::get('/search/suggestions', [SearchController::class, 'suggestions'])->name('search.suggestions');
-    Route::get('/search/advanced', [SearchController::class, 'advanced'])->name('search.advanced');
 
     // Notifications
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');

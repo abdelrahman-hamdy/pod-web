@@ -1,5 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
+@php
+    $isCollapsed = request()->cookie('sidebar_collapsed', 'false') === 'true';
+    $mainContentClass = $isCollapsed ? 'main-content-collapsed' : 'main-content-expanded';
+@endphp
 
 <head>
     <meta charset="UTF-8" />
@@ -48,10 +52,12 @@
         
         .main-content-collapsed {
             margin-left: 80px;
+            transition: margin-left 0.3s ease;
         }
         
         .main-content-expanded {
             margin-left: 256px;
+            transition: margin-left 0.3s ease;
         }
         
         .sidebar-text {
@@ -100,8 +106,7 @@
         }
         
         /* Ensure smooth transitions */
-        .sidebar,
-        .main-content {
+        .sidebar {
             transition: all 0.3s ease;
         }
         
@@ -192,6 +197,7 @@
         };
     </script>
     @stack('styles')
+    
     <style>
         /* Animated Background Spots */
         .animated-spot {
@@ -323,8 +329,8 @@
         @include('components.sidebar')
         
         <!-- Main Content -->
-        <main class="flex-1 main-content main-content-expanded transition-all duration-300 min-h-[calc(100vh-4rem)] flex flex-col w-full min-w-0" id="main-content">
-            <div class="flex-1 w-full min-w-0 flex justify-center">
+        <main class="flex-1 main-content {{ $mainContentClass }} min-h-[calc(100vh-4rem)] flex flex-col w-full min-w-0" id="main-content">
+            <div class="flex-1 w-full min-w-0">
                 <div class="max-w-6xl mx-auto px-6 py-8 w-full min-w-0">
                     @yield('content')
                 </div>
@@ -386,6 +392,17 @@
             document.body.style.overflow = ''; // Restore scrolling
         }
 
+        // Helper function to set cookie
+        function setCookie(name, value, days) {
+            let expires = "";
+            if (days) {
+                let date = new Date();
+                date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+                expires = "; expires=" + date.toUTCString();
+            }
+            document.cookie = name + "=" + (value || "") + expires + "; path=/";
+        }
+
         // Sidebar toggle functionality (desktop only)
         function toggleSidebar() {
             // Only work on desktop (screen width > 768px)
@@ -405,8 +422,8 @@
                 mainContent.classList.add('main-content-collapsed');
                 toggleBtn.innerHTML = '<i class="ri-arrow-right-line text-sm"></i>';
                 
-                // Save state to localStorage
-                localStorage.setItem('sidebar-collapsed', 'true');
+                // Save state to cookie
+                setCookie('sidebar_collapsed', 'true', 365);
             } else {
                 // Expand sidebar
                 sidebar.classList.remove('sidebar-collapsed');
@@ -415,39 +432,8 @@
                 mainContent.classList.add('main-content-expanded');
                 toggleBtn.innerHTML = '<i class="ri-menu-line text-sm"></i>';
                 
-                // Save state to localStorage
-                localStorage.setItem('sidebar-collapsed', 'false');
-            }
-        }
-
-        // Initialize sidebar state from localStorage
-        function initializeSidebarState() {
-            // Only apply on desktop (screen width > 768px)
-            if (window.innerWidth <= 768) {
-                return;
-            }
-            
-            const sidebar = document.getElementById('sidebar');
-            const mainContent = document.getElementById('main-content');
-            const toggleBtn = document.getElementById('sidebar-toggle');
-            
-            // Get saved state from localStorage
-            const isCollapsed = localStorage.getItem('sidebar-collapsed') === 'true';
-            
-            if (isCollapsed) {
-                // Apply collapsed state
-                sidebar.classList.remove('sidebar-expanded');
-                sidebar.classList.add('sidebar-collapsed');
-                mainContent.classList.remove('main-content-expanded');
-                mainContent.classList.add('main-content-collapsed');
-                toggleBtn.innerHTML = '<i class="ri-arrow-right-line text-sm"></i>';
-            } else {
-                // Apply expanded state (default)
-                sidebar.classList.remove('sidebar-collapsed');
-                sidebar.classList.add('sidebar-expanded');
-                mainContent.classList.remove('main-content-collapsed');
-                mainContent.classList.add('main-content-expanded');
-                toggleBtn.innerHTML = '<i class="ri-menu-line text-sm"></i>';
+                // Save state to cookie
+                setCookie('sidebar_collapsed', 'false', 365);
             }
         }
 
@@ -456,25 +442,16 @@
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('mobile-overlay');
             
-            // If screen becomes desktop size, close mobile sidebar and restore saved state
+            // If screen becomes desktop size, close mobile sidebar
             if (window.innerWidth > 768) {
                 sidebar.classList.remove('mobile-open');
                 overlay.classList.remove('active');
                 document.body.style.overflow = '';
-                
-                // Restore saved sidebar state
-                initializeSidebarState();
             } else {
                 // If screen becomes mobile size, ensure sidebar is expanded
                 sidebar.classList.remove('sidebar-collapsed');
                 sidebar.classList.add('sidebar-expanded');
             }
-        });
-
-        // Initialize sidebar state when page loads
-        document.addEventListener('DOMContentLoaded', function() {
-            // Initialize sidebar state from localStorage
-            initializeSidebarState();
         });
 
         // Profile dropdown functionality

@@ -8,8 +8,8 @@
 
 <!-- PhotoSwipe will be initialized dynamically -->
 
-<div class="w-full">
-    <div class="flex flex-col lg:flex-row lg:gap-8 gap-6 w-full justify-center">
+<div class="w-full" style="min-width: 0;">
+    <div class="flex flex-col lg:flex-row lg:gap-8 gap-6 w-full" style="width: 100%; min-width: 0;">
         <!-- Main Content Area -->
         <div class="flex-1 w-full lg:max-w-3xl min-w-0 lg:flex-shrink-0">
             <!-- Post Creation -->
@@ -163,13 +163,19 @@
                     @foreach(\App\Models\Post::published()->withCount('comments')->orderBy('likes_count', 'desc')->take(3)->get() as $trendingPost)
                         <a href="{{ route('posts.show', $trendingPost) }}" class="block hover:bg-slate-50 rounded-lg p-3 -m-3 transition-colors group">
                             <div class="flex space-x-3">
-                                <x-avatar 
-                                    :src="$trendingPost->user->avatar ?? null"
-                                    :name="$trendingPost->user->name ?? 'User'"
-                                    size="sm"
-                                    :color="$trendingPost->user->avatar_color ?? null" />
+                                <div class="flex-shrink-0">
+                                    <x-avatar 
+                                        :src="$trendingPost->user->avatar ?? null"
+                                        :name="$trendingPost->user->name ?? 'User'"
+                                        size="sm"
+                                        :color="$trendingPost->user->avatar_color ?? null" />
+                                </div>
                                 <div class="min-w-0 flex-1">
-                                    <p class="text-sm text-slate-700 line-clamp-2 group-hover:text-indigo-600 transition-colors">
+                                    <div class="mb-1.5">
+                                        <div class="text-sm font-semibold text-slate-800">{{ $trendingPost->user->name ?? 'User' }}</div>
+                                        <div class="text-xs text-slate-500 mt-0.5">{{ $trendingPost->created_at->diffForHumans() }}</div>
+                                    </div>
+                                    <p class="text-sm text-slate-700 line-clamp-2">
                                         {{ Str::limit($trendingPost->content, 80) }}
                                     </p>
                                     <div class="flex items-center space-x-3 mt-2">
@@ -955,16 +961,20 @@
             
             div.innerHTML = `
                 <div class="flex space-x-3">
-                    <div class="w-8 h-8 ${comment.user.avatar_color || 'bg-slate-100 text-slate-600'} rounded-full flex items-center justify-center flex-shrink-0">
-                        <span class="font-semibold text-xs">
-                            ${(comment.user.name || 'U').substring(0, 2).toUpperCase()}
-                        </span>
-                    </div>
+                    <a href="/profile/${comment.user.id}" class="flex-shrink-0">
+                        <div class="w-8 h-8 ${comment.user.avatar_color || 'bg-slate-100 text-slate-600'} rounded-full flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity">
+                            <span class="font-semibold text-xs">
+                                ${(comment.user.name || 'U').substring(0, 2).toUpperCase()}
+                            </span>
+                        </div>
+                    </a>
                     
                     <div class="flex-1 min-w-0">
                         <div class="bg-slate-100 rounded-lg p-3">
                             <div class="flex items-center space-x-2 mb-1">
-                                <h4 class="font-semibold text-sm text-slate-800">${comment.user.name || 'Anonymous'}</h4>
+                                <a href="/profile/${comment.user.id}" class="hover:text-indigo-600 transition-colors">
+                                    <h4 class="font-semibold text-sm text-slate-800">${comment.user.name || 'Anonymous'}</h4>
+                                </a>
                                 <span class="text-xs text-slate-500">${this.formatDate(comment.created_at)}</span>
                             </div>
                             <p class="text-sm text-slate-700 whitespace-pre-line">${comment.content}</p>

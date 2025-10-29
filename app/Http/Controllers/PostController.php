@@ -34,6 +34,11 @@ class PostController extends Controller
             $query->featured();
         }
 
+        // Filter by hashtag
+        if ($request->filled('hashtag')) {
+            $query->whereJsonContains('hashtags', $request->hashtag);
+        }
+
         $posts = $query->paginate(15);
 
         return view('posts.index', compact('posts'));
@@ -77,6 +82,15 @@ class PostController extends Controller
         $validated['user_id'] = Auth::id();
         $validated['type'] = $validated['type'] ?? 'text';
         $validated['is_published'] = $validated['is_published'] ?? true;
+
+        // Extract hashtags from content and remove them from content
+        if (! empty($validated['content'])) {
+            $hashtags = $this->extractHashtags($validated['content']);
+            $validated['hashtags'] = $hashtags;
+
+            // Remove hashtags from content to avoid duplication
+            $validated['content'] = $this->removeHashtagsFromContent($validated['content']);
+        }
 
         // Handle image upload
         if ($request->hasFile('images')) {
@@ -265,9 +279,14 @@ class PostController extends Controller
             return back()->withErrors(['content' => 'Post must have either content or at least one image.']);
         }
 
+        // Extract hashtags from content and remove them from content
+        $hashtags = $this->extractHashtags($content);
+        $contentWithoutHashtags = $this->removeHashtagsFromContent($content);
+
         // Update the post
-        $post->content = $content;
+        $post->content = $contentWithoutHashtags;
         $post->images = $currentImages;
+        $post->hashtags = $hashtags;
 
         \Log::info('Before save - post attributes', [
             'images' => $post->images,
@@ -387,5 +406,29 @@ class PostController extends Controller
             'poll_options' => $post->fresh()->poll_options,
             'user_voted' => true,
         ]);
+    }
+
+    /**
+     * Extract hashtags from content text.
+     */
+    private function extractHashtags(string $content): array
+    {
+        // Match hashtags (word characters after #)
+        preg_match_all('/#(\w+)/', $content, $matches);
+
+        // Get unique hashtags, limit to 10
+        $hashtags = array_unique($matches[1] ?? []);
+        $hashtags = array_slice($hashtags, 0, 10);
+
+        return array_values($hashtags);
+    }
+
+    /**
+     * Remove hashtags from content text.
+     */
+    private function removeHashtagsFromContent(string $content): string
+    {
+        // Remove hashtags from content (keep the text, remove the # and word)
+        return preg_replace('/#\w+\s*/', '', $content);
     }
 }

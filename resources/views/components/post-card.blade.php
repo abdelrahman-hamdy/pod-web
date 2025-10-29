@@ -7,13 +7,17 @@
 <article class="bg-white rounded-xl shadow-[0_8px_24px_rgba(0,0,0,0.04)] p-6 relative">
     <div class="flex items-center justify-between mb-4">
         <div class="flex items-center space-x-3 flex-1">
-            <x-avatar 
-                :src="$post->user->avatar ?? null"
-                :name="$post->user->name ?? 'User'"
-                size="sm"
-                :color="$post->user->avatar_color ?? null" />
+            <a href="{{ route('profile.show.other', $post->user->id) }}" class="flex-shrink-0">
+                <x-avatar 
+                    :src="$post->user->avatar ?? null"
+                    :name="$post->user->name ?? 'User'"
+                    size="sm"
+                    :color="$post->user->avatar_color ?? null" />
+            </a>
             <div>
-                <h4 class="font-semibold text-slate-800">{{ $post->user->name ?? 'Anonymous' }}</h4>
+                <a href="{{ route('profile.show.other', $post->user->id) }}" class="hover:text-indigo-600 transition-colors">
+                    <h4 class="font-semibold text-slate-800">{{ $post->user->name ?? 'Anonymous' }}</h4>
+                </a>
             <p class="text-sm text-slate-500">{{ $post->user->job_title ?? 'Member' }} • 
                 <a href="{{ route('posts.show', $post) }}" class="hover:text-indigo-600 transition-colors">{{ $post->created_at->diffForHumans() }}</a>
             </p>
@@ -44,7 +48,7 @@
         @endauth
     </div>
     
-    <p class="text-slate-700 mb-4">{{ $post->content }}</p>
+    <p class="text-slate-700 mb-4 whitespace-pre-line">{{ $post->content }}</p>
     
     @if($post->images && count($post->images) > 0)
         <div class="mb-4" data-post-images='@json($post->images)'>
@@ -71,7 +75,7 @@
     @if($post->hashtags && count($post->hashtags) > 0)
         <div class="flex flex-wrap gap-2 mb-4">
             @foreach($post->hashtags as $hashtag)
-                <span class="bg-indigo-100 text-indigo-600 px-2 py-1 rounded-full text-xs">{{ $hashtag }}</span>
+                <a href="{{ route('posts.index', ['hashtag' => $hashtag]) }}" class="bg-indigo-100 text-indigo-600 hover:bg-indigo-200 hover:text-indigo-700 px-2 py-1 rounded-full text-xs transition-colors">{{ $hashtag }}</a>
             @endforeach
         </div>
     @endif
@@ -92,7 +96,7 @@
                 <span class="text-sm">Comment</span>
                 <span class="text-sm comments-count">{{ $post->comments_count ?? 0 }}</span>
             </button>
-            <button class="flex items-center justify-center space-x-2 hover:text-indigo-600 transition-colors text-slate-500 py-4 px-6">
+            <button onclick="openShareModal({{ $post->id }})" class="flex items-center justify-center space-x-2 hover:text-indigo-600 transition-colors text-slate-500 py-4 px-6">
                 <div class="w-5 h-5 flex items-center justify-center">
                     <i class="ri-share-line"></i>
                 </div>
@@ -101,3 +105,139 @@
         </div>
     </div>
 </article>
+
+<!-- Share Modal -->
+<div id="share-modal-{{ $post->id }}" class="fixed inset-0 z-50 hidden">
+    <!-- Backdrop -->
+    <div class="fixed inset-0 bg-black bg-opacity-50" onclick="closeShareModal({{ $post->id }})"></div>
+    
+    <!-- Modal Content -->
+    <div class="fixed inset-0 flex items-center justify-center pointer-events-none">
+        <div class="bg-white rounded-2xl shadow-xl max-w-md w-full mx-4 pointer-events-auto overflow-hidden">
+            <!-- Header -->
+            <div class="px-6 py-4 border-b border-slate-200 bg-slate-50">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-lg font-semibold text-slate-800">Share Post</h3>
+                    <button onclick="closeShareModal({{ $post->id }})" class="text-slate-400 hover:text-slate-600 transition-colors">
+                        <i class="ri-close-line text-xl"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Share Buttons -->
+            <div class="px-6 py-4">
+                <div class="flex flex-wrap gap-2">
+                    <!-- Facebook -->
+                    <a href="https://www.facebook.com/sharer/sharer.php?u={{ urlencode(route('posts.show', $post)) }}" 
+                       target="_blank"
+                       class="flex items-center space-x-2 px-4 py-2.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 transition-colors text-sm">
+                        <i class="ri-facebook-fill text-blue-600"></i>
+                        <span class="font-medium text-slate-700">Facebook</span>
+                    </a>
+                    
+                    <!-- X -->
+                    <a href="https://x.com/intent/post?url={{ urlencode(route('posts.show', $post)) }}" 
+                       target="_blank"
+                       class="flex items-center space-x-2 px-4 py-2.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 transition-colors text-sm">
+                        <i class="ri-twitter-x-fill text-slate-900"></i>
+                        <span class="font-medium text-slate-700">X</span>
+                    </a>
+                    
+                    <!-- LinkedIn -->
+                    <a href="https://www.linkedin.com/sharing/share-offsite/?url={{ urlencode(route('posts.show', $post)) }}" 
+                       target="_blank"
+                       class="flex items-center space-x-2 px-4 py-2.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 transition-colors text-sm">
+                        <i class="ri-linkedin-fill text-blue-600"></i>
+                        <span class="font-medium text-slate-700">LinkedIn</span>
+                    </a>
+                    
+                    <!-- WhatsApp -->
+                    <a href="https://wa.me/?text={{ urlencode(route('posts.show', $post)) }}" 
+                       target="_blank"
+                       class="flex items-center space-x-2 px-4 py-2.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 transition-colors text-sm">
+                        <i class="ri-whatsapp-fill text-green-600"></i>
+                        <span class="font-medium text-slate-700">WhatsApp</span>
+                    </a>
+                    
+                    <!-- Telegram -->
+                    <a href="https://t.me/share/url?url={{ urlencode(route('posts.show', $post)) }}" 
+                       target="_blank"
+                       class="flex items-center space-x-2 px-4 py-2.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 transition-colors text-sm">
+                        <i class="ri-telegram-fill text-blue-500"></i>
+                        <span class="font-medium text-slate-700">Telegram</span>
+                    </a>
+                    
+                    <!-- Email -->
+                    <a href="mailto:?subject=Shared from People Of Data&body={{ urlencode(route('posts.show', $post)) }}" 
+                       class="flex items-center space-x-2 px-4 py-2.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 transition-colors text-sm">
+                        <i class="ri-mail-line text-slate-600"></i>
+                        <span class="font-medium text-slate-700">Email</span>
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Copy Link Section -->
+            <div class="px-6 py-4 border-t border-slate-200 bg-slate-50">
+                <label class="block text-sm font-medium text-slate-700 mb-2">Copy link</label>
+                <div class="flex items-center space-x-2">
+                    <input type="text" 
+                           id="share-url-{{ $post->id }}" 
+                           value="{{ route('posts.show', $post) }}" 
+                           readonly
+                           class="flex-1 px-4 py-2 border border-slate-300 rounded-lg bg-white text-sm text-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <button onclick="copyShareUrl({{ $post->id }})" 
+                            id="copy-btn-{{ $post->id }}"
+                            class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium text-sm">
+                        <i class="ri-file-copy-line"></i>
+                    </button>
+                </div>
+                <p id="copy-success-{{ $post->id }}" class="text-xs text-green-600 mt-2 hidden">
+                    <i class="ri-check-line"></i> Link copied to clipboard!
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openShareModal(postId) {
+        document.getElementById(`share-modal-${postId}`).classList.remove('hidden');
+    }
+    
+    function closeShareModal(postId) {
+        document.getElementById(`share-modal-${postId}`).classList.add('hidden');
+        // Reset copy success message
+        const successMsg = document.getElementById(`copy-success-${postId}`);
+        if (successMsg) {
+            successMsg.classList.add('hidden');
+        }
+    }
+    
+    function copyShareUrl(postId) {
+        const urlInput = document.getElementById(`share-url-${postId}`);
+        const copyBtn = document.getElementById(`copy-btn-${postId}`);
+        const successMsg = document.getElementById(`copy-success-${postId}`);
+        
+        if (urlInput) {
+            urlInput.select();
+            document.execCommand('copy');
+            
+            // Show success message
+            if (successMsg) {
+                successMsg.classList.remove('hidden');
+                setTimeout(() => {
+                    successMsg.classList.add('hidden');
+                }, 2000);
+            }
+            
+            // Update button temporarily
+            if (copyBtn) {
+                const originalHTML = copyBtn.innerHTML;
+                copyBtn.innerHTML = '<i class="ri-check-line"></i>';
+                setTimeout(() => {
+                    copyBtn.innerHTML = originalHTML;
+                }, 1000);
+            }
+        }
+    }
+</script>

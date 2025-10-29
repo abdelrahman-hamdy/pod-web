@@ -19,10 +19,15 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => \App\Http\Middleware\RoleMiddleware::class,
             'client' => \App\Http\Middleware\ClientMiddleware::class,
         ]);
-        
+
         // Apply profile completion check to all web routes
         $middleware->web(append: [
             \App\Http\Middleware\EnsureProfileCompleted::class,
+        ]);
+
+        // Don't encrypt sidebar state cookie (set by JavaScript)
+        $middleware->encryptCookies(except: [
+            'sidebar_collapsed',
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

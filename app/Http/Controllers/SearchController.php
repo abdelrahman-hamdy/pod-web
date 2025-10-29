@@ -226,6 +226,91 @@ class SearchController extends Controller
     }
 
     /**
+     * Live search for posts and users only (main search feature).
+     */
+    public function liveSearch(Request $request)
+    {
+        $query = $request->get('q', '');
+
+        if (strlen($query) < 3) {
+            return response()->json([
+                'success' => true,
+                'posts' => [],
+                'users' => [],
+                'total' => 0,
+            ]);
+        }
+
+        $posts = Post::with(['user'])
+            ->published()
+            ->where(function ($q) use ($query) {
+                $q->where('content', 'like', "%{$query}%")
+                    ->orWhereJsonContains('hashtags', $query);
+            })
+            ->latest()
+            ->limit(5)
+            ->get();
+
+        $users = User::where('is_active', true)
+            ->where('id', '!=', auth()->id()) // Exclude current user
+            ->where(function ($q) use ($query) {
+                $q->where('name', 'like', "%{$query}%")
+                    ->orWhere('first_name', 'like', "%{$query}%")
+                    ->orWhere('last_name', 'like', "%{$query}%");
+            })
+            ->limit(5)
+            ->get()
+            ->makeVisible(['avatar', 'avatar_color']);
+
+        return response()->json([
+            'success' => true,
+            'posts' => $posts,
+            'users' => $users,
+            'total' => $posts->count() + $users->count(),
+        ]);
+    }
+
+    /**
+     * Search results page for posts and users.
+     */
+    public function searchResults(Request $request)
+    {
+        $query = $request->get('q', '');
+
+        $posts = collect();
+        $users = collect();
+
+        if (strlen($query) >= 3) {
+            $posts = Post::with(['user', 'likes' => function ($q) {
+                $q->where('user_id', auth()->id());
+            }])
+                ->published()
+                ->where(function ($q) use ($query) {
+                    $q->where('content', 'like', "%{$query}%")
+                        ->orWhereJsonContains('hashtags', $query);
+                })
+                ->latest()
+                ->get()
+                ->map(function ($post) {
+                    $post->is_liked = $post->likes->isNotEmpty();
+
+                    return $post;
+                });
+
+            $users = User::where('is_active', true)
+                ->where('id', '!=', auth()->id())
+                ->where(function ($q) use ($query) {
+                    $q->where('name', 'like', "%{$query}%")
+                        ->orWhere('first_name', 'like', "%{$query}%")
+                        ->orWhere('last_name', 'like', "%{$query}%");
+                })
+                ->get();
+        }
+
+        return view('search.results', compact('posts', 'users', 'query'));
+    }
+
+    /**
      * Get search suggestions as user types.
      */
     public function suggestions(Request $request)
