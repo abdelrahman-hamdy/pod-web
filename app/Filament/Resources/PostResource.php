@@ -20,22 +20,11 @@ class PostResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('user_id')
-                    ->required()
-                    ->numeric(),
-                Forms\Components\TextInput::make('type')
-                    ->required(),
+                Forms\Components\TextInput::make('user_id')->numeric()->disabled(),
+                Forms\Components\TextInput::make('type')->disabled(),
                 Forms\Components\Textarea::make('content')
                     ->columnSpanFull(),
                 Forms\Components\TextInput::make('images'),
-                Forms\Components\TextInput::make('url')
-                    ->maxLength(255),
-                Forms\Components\TextInput::make('url_title')
-                    ->maxLength(255),
-                Forms\Components\Textarea::make('url_description')
-                    ->columnSpanFull(),
-                Forms\Components\FileUpload::make('url_image')
-                    ->image(),
                 Forms\Components\TextInput::make('poll_options'),
                 Forms\Components\DateTimePicker::make('poll_ends_at'),
                 Forms\Components\TextInput::make('hashtags'),
@@ -62,42 +51,44 @@ class PostResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('user_id')
-                    ->numeric()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('type'),
-                Tables\Columns\TextColumn::make('url')
+                Tables\Columns\TextColumn::make('user.name')
+                    ->label('Author')
+                    ->sortable()
                     ->searchable(),
-                Tables\Columns\TextColumn::make('url_title')
-                    ->searchable(),
-                Tables\Columns\ImageColumn::make('url_image'),
-                Tables\Columns\TextColumn::make('poll_ends_at')
-                    ->dateTime()
+                Tables\Columns\TextColumn::make('type')
+                    ->badge()
                     ->sortable(),
+                Tables\Columns\TextColumn::make('content')
+                    ->label('Content')
+                    ->limit(80)
+                    ->toggleable()
+                    ->searchable(),
                 Tables\Columns\TextColumn::make('likes_count')
+                    ->label('Likes')
                     ->numeric()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('comments_count')
+                    ->label('Comments')
                     ->numeric()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('shares_count')
+                    ->label('Shares')
                     ->numeric()
                     ->sortable(),
                 Tables\Columns\IconColumn::make('is_published')
+                    ->label('Published')
                     ->boolean(),
                 Tables\Columns\IconColumn::make('is_featured')
+                    ->label('Featured')
                     ->boolean(),
                 Tables\Columns\TextColumn::make('created_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('updated_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->label('Created')
+                    ->dateTime('M d, Y')
+                    ->sortable(),
             ])
+            ->defaultSort('created_at', 'desc')
             ->filters([
-                //
+                // Add filters here if needed later
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
@@ -106,7 +97,8 @@ class PostResource extends Resource
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
-            ]);
+            ])
+            ->recordUrl(fn ($record) => route('filament.admin.resources.posts.edit', $record));
     }
 
     public static function getRelations(): array

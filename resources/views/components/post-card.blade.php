@@ -4,7 +4,7 @@
     use Illuminate\Support\Facades\Storage;
 @endphp
 
-<article class="bg-white rounded-xl shadow-[0_8px_24px_rgba(0,0,0,0.04)] p-6 relative">
+<article class="bg-white rounded-xl shadow-sm border border-slate-100 p-6 relative">
     <div class="flex items-center justify-between mb-4">
         <div class="flex items-center space-x-3 flex-1">
             <a href="{{ route('profile.show.other', $post->user->id) }}" class="flex-shrink-0">
@@ -28,7 +28,7 @@
         @auth
             @if($post->user_id === auth()->id())
                 <div class="relative">
-                    <button onclick="togglePostOptions({{ $post->id }})" class="text-slate-400 hover:text-slate-600 transition-colors p-1">
+                    <button onclick="togglePostOptions({{ $post->id }})" class="post-options-trigger text-slate-400 hover:text-slate-600 transition-colors p-1">
                         <i class="ri-more-2-fill text-lg"></i>
                     </button>
                     
@@ -49,7 +49,7 @@
         @endauth
     </div>
     
-    <p class="text-slate-700 mb-4 whitespace-pre-line">{{ $post->content }}</p>
+    <p class="text-slate-700 mb-4 whitespace-pre-line">{!! $post->content !!}</p>
     
     @if($post->images && count($post->images) > 0)
         <div class="mb-4" data-post-images='@json($post->images)'>
@@ -70,14 +70,6 @@
                     </div>
                 @endforeach
             </div>
-        </div>
-    @endif
-    
-    @if($post->hashtags && count($post->hashtags) > 0)
-        <div class="flex flex-wrap gap-2 mb-4">
-            @foreach($post->hashtags as $hashtag)
-                <span class="bg-indigo-100 text-indigo-600 px-2 py-1 rounded-full text-xs">{{ $hashtag }}</span>
-            @endforeach
         </div>
     @endif
     
@@ -129,7 +121,7 @@
             <div class="px-6 py-4">
                 <div class="flex flex-wrap gap-2">
                     <!-- Facebook -->
-                    <a href="https://www.facebook.com/sharer/sharer.php?u={{ urlencode(route('posts.show', $post)) }}" 
+                    <a href="{{ route('posts.share-redirect', ['post' => $post->id]) }}?platform=facebook&url={{ urlencode('https://www.facebook.com/sharer/sharer.php?u=' . route('posts.show', $post)) }}" 
                        target="_blank"
                        class="flex items-center space-x-2 px-4 py-2.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 transition-colors text-sm">
                         <i class="ri-facebook-fill text-blue-600"></i>
@@ -137,7 +129,7 @@
                     </a>
                     
                     <!-- X -->
-                    <a href="https://x.com/intent/post?url={{ urlencode(route('posts.show', $post)) }}" 
+                    <a href="{{ route('posts.share-redirect', ['post' => $post->id]) }}?platform=twitter&url={{ urlencode('https://x.com/intent/post?url=' . route('posts.show', $post)) }}" 
                        target="_blank"
                        class="flex items-center space-x-2 px-4 py-2.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 transition-colors text-sm">
                         <i class="ri-twitter-x-fill text-slate-900"></i>
@@ -145,7 +137,7 @@
                     </a>
                     
                     <!-- LinkedIn -->
-                    <a href="https://www.linkedin.com/sharing/share-offsite/?url={{ urlencode(route('posts.show', $post)) }}" 
+                    <a href="{{ route('posts.share-redirect', ['post' => $post->id]) }}?platform=linkedin&url={{ urlencode('https://www.linkedin.com/sharing/share-offsite/?url=' . route('posts.show', $post)) }}" 
                        target="_blank"
                        class="flex items-center space-x-2 px-4 py-2.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 transition-colors text-sm">
                         <i class="ri-linkedin-fill text-blue-600"></i>
@@ -153,7 +145,7 @@
                     </a>
                     
                     <!-- WhatsApp -->
-                    <a href="https://wa.me/?text={{ urlencode(route('posts.show', $post)) }}" 
+                    <a href="{{ route('posts.share-redirect', ['post' => $post->id]) }}?platform=whatsapp&url={{ urlencode('https://wa.me/?text=' . route('posts.show', $post)) }}" 
                        target="_blank"
                        class="flex items-center space-x-2 px-4 py-2.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 transition-colors text-sm">
                         <i class="ri-whatsapp-fill text-green-600"></i>
@@ -161,7 +153,7 @@
                     </a>
                     
                     <!-- Telegram -->
-                    <a href="https://t.me/share/url?url={{ urlencode(route('posts.show', $post)) }}" 
+                    <a href="{{ route('posts.share-redirect', ['post' => $post->id]) }}?platform=telegram&url={{ urlencode('https://t.me/share/url?url=' . route('posts.show', $post)) }}" 
                        target="_blank"
                        class="flex items-center space-x-2 px-4 py-2.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 transition-colors text-sm">
                         <i class="ri-telegram-fill text-blue-500"></i>
@@ -169,7 +161,7 @@
                     </a>
                     
                     <!-- Email -->
-                    <a href="mailto:?subject=Shared from People Of Data&body={{ urlencode(route('posts.show', $post)) }}" 
+                    <a href="{{ route('posts.share-redirect', ['post' => $post->id]) }}?platform=email&url={{ urlencode('mailto:?subject=Shared from People Of Data&body=' . route('posts.show', $post)) }}" 
                        class="flex items-center space-x-2 px-4 py-2.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 transition-colors text-sm">
                         <i class="ri-mail-line text-slate-600"></i>
                         <span class="font-medium text-slate-700">Email</span>
@@ -186,7 +178,7 @@
                            value="{{ route('posts.show', $post) }}" 
                            readonly
                            class="flex-1 px-4 py-2 border border-slate-300 rounded-lg bg-white text-sm text-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                    <button onclick="copyShareUrl({{ $post->id }})" 
+                    <button onclick="copyShareUrl({{ $post->id }}, '{{ route('posts.share-ping', ['post' => $post->id]) }}')" 
                             id="copy-btn-{{ $post->id }}"
                             class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium text-sm">
                         <i class="ri-file-copy-line"></i>
@@ -201,44 +193,43 @@
 </div>
 
 <script>
-    function openShareModal(postId) {
-        document.getElementById(`share-modal-${postId}`).classList.remove('hidden');
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+        return null;
     }
-    
-    function closeShareModal(postId) {
-        document.getElementById(`share-modal-${postId}`).classList.add('hidden');
-        // Reset copy success message
+
+    function getCsrfToken() {
+        const meta = document.querySelector('meta[name="csrf-token"]');
+        if (meta && meta.content) return meta.content;
+        const xsrf = getCookie('XSRF-TOKEN');
+        if (xsrf) try { return decodeURIComponent(xsrf); } catch (_) { return xsrf; }
+        return '';
+    }
+
+    function copyShareUrl(postId, pingUrl) {
+        const input = document.getElementById(`share-url-${postId}`);
         const successMsg = document.getElementById(`copy-success-${postId}`);
+        const btn = document.getElementById(`copy-btn-${postId}`);
+
+        if (!input) return;
+        input.select();
+        document.execCommand('copy');
+
         if (successMsg) {
-            successMsg.classList.add('hidden');
+            successMsg.classList.remove('hidden');
+            setTimeout(() => successMsg.classList.add('hidden'), 1500);
         }
-    }
-    
-    function copyShareUrl(postId) {
-        const urlInput = document.getElementById(`share-url-${postId}`);
-        const copyBtn = document.getElementById(`copy-btn-${postId}`);
-        const successMsg = document.getElementById(`copy-success-${postId}`);
-        
-        if (urlInput) {
-            urlInput.select();
-            document.execCommand('copy');
-            
-            // Show success message
-            if (successMsg) {
-                successMsg.classList.remove('hidden');
-                setTimeout(() => {
-                    successMsg.classList.add('hidden');
-                }, 2000);
-            }
-            
-            // Update button temporarily
-            if (copyBtn) {
-                const originalHTML = copyBtn.innerHTML;
-                copyBtn.innerHTML = '<i class="ri-check-line"></i>';
-                setTimeout(() => {
-                    copyBtn.innerHTML = originalHTML;
-                }, 1000);
-            }
-        }
+
+        // Silent share increment for copy via GET ping (no CSRF, most reliable)
+        try {
+            const url = `${pingUrl}?platform=copy&ts=${Date.now()}`;
+            // Prefer fetch GET keepalive
+            fetch(url, { method: 'GET', keepalive: true, credentials: 'same-origin' }).catch(() => {
+                const img = new Image();
+                img.src = url;
+            });
+        } catch (_) {}
     }
 </script>

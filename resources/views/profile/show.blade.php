@@ -195,23 +195,30 @@
                 @endif
 
                 <!-- Recent Posts -->
-                <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-4 lg:p-6">
-                    <div class="flex items-center justify-between mb-4">
-                        <h2 class="text-lg font-semibold text-slate-800">Recent Posts</h2>
-                        @if($user->posts()->count() > 3)
-                            <a href="{{ route('home') }}?user={{ $user->id }}" class="text-indigo-600 hover:text-indigo-700 text-sm font-medium flex items-center space-x-1">
-                                <span>View All</span>
-                                <i class="ri-arrow-right-line"></i>
-                            </a>
-                        @endif
-                    </div>
-                    <div class="space-y-3">
-                        @forelse($user->posts()->latest()->take(3)->get() as $post)
-                            <x-cards.post-card :post="$post" :compact="true" />
-                        @empty
-                            <p class="text-slate-400 italic text-center py-8">No posts yet.</p>
-                        @endforelse
-                    </div>
+                <h2 class="text-lg font-semibold text-slate-800 mb-4">{{ $user->name }}'s Posts</h2>
+                @php
+                    $initialPosts = $user->posts()
+                        ->with(['user', 'likes' => function ($query) {
+                            $query->where('user_id', auth()->id());
+                        }])
+                        ->latest()
+                        ->paginate(5);
+                @endphp
+                <div id="profile-posts-container"
+                     class="space-y-6"
+                     data-user-id="{{ $user->id }}"
+                     data-next-page-url="{{ $initialPosts->nextPageUrl() ? (request()->url() . '?posts_page=2') : '' }}">
+                    @forelse($initialPosts as $post)
+                        @php
+                            $post->is_liked = $post->likes->isNotEmpty();
+                        @endphp
+                        <x-post-card :post="$post" />
+                    @empty
+                        <p class="text-slate-400 italic text-center py-8">No posts yet.</p>
+                    @endforelse
+                </div>
+                <div id="profile-posts-loader" class="flex items-center justify-center py-4 hidden">
+                    <span class="text-slate-400 text-sm">Loading more posts...</span>
                 </div>
             </div>
         </div>
@@ -497,6 +504,9 @@
 <!-- Confirmation Modal for Client Conversion -->
 <x-confirmation-modal id="client-conversion-modal" />
 
+<!-- Comment Modal -->
+<x-comment-modal />
+
 <!-- Portfolio Modal -->
 <div id="portfolio-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-[999] flex items-center justify-center p-4 !my-0">
     <div class="bg-white rounded-xl shadow-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
@@ -545,7 +555,71 @@
 </div>
 
 @push('scripts')
+<!-- Comment Manager Script (must load before post-interactions) -->
+<script src="{{ asset('js/comment-manager.js') }}"></script>
+<!-- Post Interactions Script -->
+<script src="{{ asset('js/post-interactions.js') }}"></script>
+<style>
+    .like-btn:hover {
+        color: #ef4444 !important;
+    }
+    .like-btn.text-red-500:hover {
+        color: #dc2626 !important;
+    }
+</style>
 <script>
+    // Infinite scroll for Recent Posts
+    (function() {
+        const container = document.getElementById('profile-posts-container');
+        if (!container) return;
+
+        const loader = document.getElementById('profile-posts-loader');
+        const userId = container.getAttribute('data-user-id');
+        let nextPage = 2; // we rendered page 1 initially
+        let loading = false;
+        let hasMore = !!container.getAttribute('data-next-page-url');
+
+        async function loadMorePosts() {
+            if (loading || !hasMore) return;
+            loading = true;
+            loader.classList.remove('hidden');
+
+            try {
+                const url = `{{ url('/profile') }}/${userId}/posts?page=${nextPage}&per_page=5`;
+                const resp = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+                const data = await resp.json();
+                if (data?.html) {
+                    const temp = document.createElement('div');
+                    temp.innerHTML = data.html;
+                    while (temp.firstChild) {
+                        container.appendChild(temp.firstChild);
+                    }
+                }
+                if (data?.has_more && data?.next_page) {
+                    nextPage = data.next_page;
+                    hasMore = true;
+                } else {
+                    hasMore = false;
+                }
+            } catch (e) {
+                console.error('Failed to load more posts', e);
+            } finally {
+                loader.classList.add('hidden');
+                loading = false;
+            }
+        }
+
+        function onScroll() {
+            const rect = container.getBoundingClientRect();
+            const isNearBottom = rect.bottom - window.innerHeight < 300; // 300px threshold
+            if (isNearBottom) {
+                loadMorePosts();
+            }
+        }
+
+        // Attach scroll listener
+        window.addEventListener('scroll', onScroll, { passive: true });
+    })();
     // Client conversion request function
     function requestClientConversion() {
         openConfirmationModal(

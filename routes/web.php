@@ -8,6 +8,7 @@ use App\Http\Controllers\EventController;
 use App\Http\Controllers\HackathonController;
 use App\Http\Controllers\InternshipApplicationController;
 use App\Http\Controllers\JobListingController;
+use App\Http\Controllers\NewsletterController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\ProfileController;
@@ -18,6 +19,13 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', function () {
     return view('index');
 })->name('index');
+
+// Public share counter (silent)
+Route::post('/posts/{post}/share', [PostController::class, 'share'])->name('posts.share');
+// Public share redirect (GET)
+Route::get('/posts/{post}/share-redirect', [PostController::class, 'shareRedirect'])->name('posts.share-redirect');
+// Public share ping (GET)
+Route::get('/posts/{post}/share-ping', [PostController::class, 'sharePing'])->name('posts.share-ping');
 
 // Authentication Routes
 Route::middleware('guest')->group(function () {
@@ -54,6 +62,7 @@ Route::middleware('auth')->group(function () {
 
     // Dashboard
     Route::get('/home', [App\Http\Controllers\DashboardController::class, 'index'])->name('home');
+    Route::post('/newsletter/subscribe', [NewsletterController::class, 'subscribe'])->name('newsletter.subscribe');
 
     // Hackathons Dashboard
     Route::prefix('home/hackathons')->name('home.hackathons.')->group(function () {
@@ -96,6 +105,7 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile/delete', [ProfileController::class, 'deleteAccount'])->name('profile.delete');
     Route::get('/api/profile/progress', [ProfileController::class, 'getCompletionProgress'])->name('profile.progress');
     Route::get('/profile/{id}', [ProfileController::class, 'show'])->name('profile.show.other');
+    Route::get('/profile/{id}/posts', [ProfileController::class, 'userPosts'])->name('profile.posts');
     Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
     Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
 
@@ -143,7 +153,6 @@ Route::middleware('auth')->group(function () {
         return redirect()->route('home');
     })->name('posts.index');
     Route::post('/posts/{post}/like', [PostController::class, 'toggleLike'])->name('posts.like');
-    Route::post('/posts/{post}/share', [PostController::class, 'share'])->name('posts.share');
     Route::post('/posts/{post}/vote', [PostController::class, 'vote'])->name('posts.vote');
 
     // Comments Routes
@@ -165,7 +174,9 @@ Route::middleware('auth')->group(function () {
 
     // Internship Applications
     Route::get('/internships/apply', [InternshipApplicationController::class, 'create'])->name('internships.apply');
-    Route::post('/internships/apply', [InternshipApplicationController::class, 'store'])->name('internships.store');
+    Route::post('/internships/apply', [InternshipApplicationController::class, 'store'])->name('internships.applications.store');
+    Route::get('/internships/my-applications', [\App\Http\Controllers\InternshipController::class, 'myApplications'])->name('internships.my-applications');
+    Route::resource('internships', \App\Http\Controllers\InternshipController::class)->only(['index', 'create', 'store', 'show']);
 
     // Notifications
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
@@ -189,7 +200,6 @@ Route::middleware('auth')->group(function () {
 
     // API Routes
     Route::get('/api/users/search', [\App\Http\Controllers\Api\UserSearchController::class, 'search'])->name('api.users.search');
-
 
     // Client Conversion Request
     Route::middleware(['auth'])->group(function () {

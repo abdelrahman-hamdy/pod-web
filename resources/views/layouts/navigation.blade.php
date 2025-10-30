@@ -24,6 +24,10 @@
                        class="navbar-link {{ request()->routeIs('jobs.*') ? 'active' : '' }}">
                         Jobs
                     </a>
+                    <a href="{{ route('internships.index') }}"
+                       class="navbar-link {{ request()->routeIs('internships.*') ? 'active' : '' }}">
+                        Internships
+                    </a>
                     <a href="{{ route('hackathons.index') }}" 
                        class="navbar-link {{ request()->routeIs('hackathons.*') ? 'active' : '' }}">
                         Hackathons
@@ -138,6 +142,10 @@
                                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                 Settings
                             </a>
+                            <a href="{{ route('internships.my-applications') }}"
+                                 class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                My Applications
+                            </a>
                             @if(auth()->user()->role === 'client')
                                 <a href="{{ route('client.dashboard') }}" 
                                    class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
@@ -207,6 +215,10 @@
                class="block pl-3 pr-4 py-2 border-l-4 text-base font-medium {{ request()->routeIs('jobs.*') ? 'border-primary-500 text-primary-700 bg-primary-50' : 'border-transparent text-gray-600 hover:text-gray-800 hover:bg-gray-50 hover:border-gray-300' }}">
                 Jobs
             </a>
+            <a href="{{ route('internships.index') }}"
+                class="block pl-3 pr-4 py-2 border-l-4 text-base font-medium {{ request()->routeIs('internships.*') ? 'border-primary-500 text-primary-700 bg-primary-50' : 'border-transparent text-gray-600 hover:text-gray-800 hover:bg-gray-50 hover:border-gray-300' }}">
+                Internships
+            </a>
             <a href="{{ route('hackathons.index') }}" 
                class="block pl-3 pr-4 py-2 border-l-4 text-base font-medium {{ request()->routeIs('hackathons.*') ? 'border-primary-500 text-primary-700 bg-primary-50' : 'border-transparent text-gray-600 hover:text-gray-800 hover:bg-gray-50 hover:border-gray-300' }}">
                 Hackathons
@@ -245,6 +257,10 @@
                     <a href="{{ route('profile.edit') }}" 
                        class="block px-4 py-2 text-base font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100">
                         Settings
+                    </a>
+                    <a href="{{ route('internships.my-applications') }}"
+                        class="block px-4 py-2 text-base font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100">
+                        My Applications
                     </a>
                     <a href="{{ route('chatify') }}" 
                        class="block px-4 py-2 text-base font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100">

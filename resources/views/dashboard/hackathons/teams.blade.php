@@ -46,25 +46,16 @@
     </div>
 
     <!-- Tabs -->
-    <div class="bg-white rounded-xl shadow-sm border border-slate-100 mb-6" x-data="{ activeTab: 'my-teams' }">
-        <div class="flex px-6">
-            <button @click="activeTab = 'my-teams'; $dispatch('tab-switched', { tab: 'my-teams' })" :class="activeTab === 'my-teams' ? 'border-b-2 border-indigo-600 text-indigo-600' : 'text-slate-600 hover:text-slate-800'" class="px-6 py-4 font-medium text-sm transition-colors">
-                My Teams
-            </button>
-            <button @click="activeTab = 'available-teams'; $dispatch('tab-switched', { tab: 'available-teams' })" :class="activeTab === 'available-teams' ? 'border-b-2 border-indigo-600 text-indigo-600' : 'text-slate-600 hover:text-slate-800'" class="px-6 py-4 font-medium text-sm transition-colors">
-                Available Teams
-            </button>
-            <button @click="activeTab = 'received-invitations'; $dispatch('tab-switched', { tab: 'received-invitations' })" :class="activeTab === 'received-invitations' ? 'border-b-2 border-indigo-600 text-indigo-600' : 'text-slate-600 hover:text-slate-800'" class="px-6 py-4 font-medium text-sm transition-colors">
-                Received Invitations
-            </button>
-            <button @click="activeTab = 'received-requests'; $dispatch('tab-switched', { tab: 'received-requests' })" :class="activeTab === 'received-requests' ? 'border-b-2 border-indigo-600 text-indigo-600' : 'text-slate-600 hover:text-slate-800'" class="px-6 py-4 font-medium text-sm transition-colors">
-                Join Requests ({{ $receivedJoinRequests->count() }})
-            </button>
-            <button @click="activeTab = 'sent-requests'; $dispatch('tab-switched', { tab: 'sent-requests' })" :class="activeTab === 'sent-requests' ? 'border-b-2 border-indigo-600 text-indigo-600' : 'text-slate-600 hover:text-slate-800'" class="px-6 py-4 font-medium text-sm transition-colors">
-                Sent Join Requests
-            </button>
-        </div>
-    </div>
+    @php
+        $tabs = [
+            'my-teams' => ['label' => 'My Teams'],
+            'available-teams' => ['label' => 'Available Teams'],
+            'received-invitations' => ['label' => 'Received Invitations'],
+            'received-requests' => ['label' => 'Join Requests', 'count' => $receivedJoinRequests->count()],
+            'sent-requests' => ['label' => 'Sent Join Requests'],
+        ];
+    @endphp
+    <x-tabs :tabs="$tabs" />
 
     <div class="w-full" x-data="{ activeTab: 'my-teams' }" @tab-switched.window="activeTab = $event.detail.tab">
         <!-- Tab Content -->

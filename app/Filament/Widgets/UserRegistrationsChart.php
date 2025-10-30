@@ -13,6 +13,33 @@ class UserRegistrationsChart extends ChartWidget
 
     protected static ?int $sort = 2;
 
+    protected int|string|array $columnSpan = [
+        'xl' => 12,
+    ];
+
+    protected static ?string $maxHeight = '320px';
+
+    protected function getOptions(): array
+    {
+        return [
+            'maintainAspectRatio' => false,
+            'plugins' => [
+                'legend' => [
+                    'position' => 'bottom',
+                ],
+            ],
+            'scales' => [
+                'x' => [
+                    'grid' => [ 'display' => false ],
+                ],
+                'y' => [
+                    'grid' => [ 'display' => true ],
+                    'ticks' => [ 'precision' => 0 ],
+                ],
+            ],
+        ];
+    }
+
     protected function getData(): array
     {
         $data = Trend::model(User::class)

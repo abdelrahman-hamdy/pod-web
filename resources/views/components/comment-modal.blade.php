@@ -24,10 +24,6 @@
 
                     <!-- Comments List -->
                     <div id="comments-list" class="p-6 space-y-4 border-b border-slate-200">
-                        <div class="text-center text-slate-500 py-8" id="loading-comments">
-                            <i class="ri-loader-4-line animate-spin text-2xl mb-2"></i>
-                            <p>Loading comments...</p>
-                        </div>
                         <div class="text-center text-slate-500 py-8 hidden" id="no-comments">
                             <i class="ri-chat-3-line text-2xl mb-2"></i>
                             <p>No comments yet. Be the first to comment!</p>

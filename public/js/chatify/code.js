@@ -31,20 +31,24 @@ const setMessengerId = (id) => $("meta[name=id]").attr("content", id);
  *-------------------------------------------------------------
  */
 Pusher.logToConsole = chatify.pusher.debug;
-const pusher = new Pusher(chatify.pusher.key, {
+const pusherConfig = {
     encrypted: chatify.pusher.options.encrypted,
-    cluster: chatify.pusher.options.cluster,
     wsHost: chatify.pusher.options.host,
     wsPort: chatify.pusher.options.port,
     wssPort: chatify.pusher.options.port,
     forceTLS: chatify.pusher.options.useTLS,
     authEndpoint: chatify.pusherAuthEndpoint,
-  auth: {
-    headers: {
-      "X-CSRF-TOKEN": csrfToken,
+    auth: {
+        headers: {
+            "X-CSRF-TOKEN": csrfToken,
+        },
     },
-  },
-});
+};
+// Only add cluster if it's defined (not needed for Reverb)
+if (chatify.pusher.options.cluster) {
+    pusherConfig.cluster = chatify.pusher.options.cluster;
+}
+const pusher = new Pusher(chatify.pusher.key, pusherConfig);
 /**
  *-------------------------------------------------------------
  * Re-usable methods

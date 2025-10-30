@@ -36,9 +36,8 @@ class PostController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'type' => 'nullable|in:text,image,url,poll',
+            'type' => 'nullable|in:text,image,poll',
             'content' => 'nullable|string|max:5000',
-            'url' => 'nullable|url|max:255',
             'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048',
             'poll_options' => 'nullable|array|min:2|max:5',
             'poll_options.*' => 'string|max:255',
@@ -61,13 +60,10 @@ class PostController extends Controller
         $validated['type'] = $validated['type'] ?? 'text';
         $validated['is_published'] = $validated['is_published'] ?? true;
 
-        // Extract hashtags from content and remove them from content
+        // Extract hashtags from content
         if (! empty($validated['content'])) {
             $hashtags = $this->extractHashtags($validated['content']);
             $validated['hashtags'] = $hashtags;
-
-            // Remove hashtags from content to avoid duplication
-            $validated['content'] = $this->removeHashtagsFromContent($validated['content']);
         }
 
         // Handle image upload
@@ -81,10 +77,9 @@ class PostController extends Controller
             $validated['type'] = 'image';
         }
 
-        // Handle URL metadata (you might want to implement URL preview fetching)
-        if ($validated['type'] === 'url') {
-            // This is a placeholder - you would implement URL metadata fetching here
-            $validated['url_title'] = $validated['url'];
+        // Linkify URLs inside content to clickable anchors (no preview storage)
+        if (! empty($validated['content'])) {
+            $validated['content'] = $this->formatContent($validated['content']);
         }
 
         // Initialize poll options with vote counts
@@ -168,7 +163,12 @@ class PostController extends Controller
             abort(403, 'Unauthorized to edit this post.');
         }
 
-        return view('posts.edit', compact('post'));
+        $rawContent = $this->toRawTextFromFormatted($post->content ?? '');
+
+        return view('posts.edit', [
+            'post' => $post,
+            'rawContent' => $rawContent,
+        ]);
     }
 
     /**
@@ -262,12 +262,11 @@ class PostController extends Controller
             return back()->withErrors(['content' => 'Post must have either content or at least one image.']);
         }
 
-        // Extract hashtags from content and remove them from content
+        // Extract hashtags from content
         $hashtags = $this->extractHashtags($content);
-        $contentWithoutHashtags = $this->removeHashtagsFromContent($content);
 
-        // Update the post
-        $post->content = $contentWithoutHashtags;
+        // Update the post (format on save)
+        $post->content = $this->formatContent($content);
         $post->images = $currentImages;
         $post->hashtags = $hashtags;
 
@@ -336,19 +335,68 @@ class PostController extends Controller
     public function share(Request $request, Post $post)
     {
         $validated = $request->validate([
-            'platform' => 'nullable|string|in:twitter,linkedin,facebook,instagram,whatsapp',
+            'platform' => 'nullable|string|in:twitter,linkedin,facebook,instagram,whatsapp,email,telegram,copy',
         ]);
 
-        \App\Models\PostShare::recordShare($post->id, Auth::id(), $validated['platform'] ?? null);
+        if (Auth::check()) {
+            \App\Models\PostShare::recordShare($post->id, Auth::id(), $validated['platform'] ?? null);
+            $actualCount = $post->getActualSharesCount();
+            $post->update(['shares_count' => $actualCount]);
 
-        // Update post shares count
-        $actualCount = $post->getActualSharesCount();
-        $post->update(['shares_count' => $actualCount]);
+            return response()->json([
+                'success' => true,
+                'shares_count' => $actualCount,
+            ]);
+        }
+
+        // Guest: increment stored counter silently without creating a row
+        $post->increment('shares_count');
 
         return response()->json([
             'success' => true,
-            'shares_count' => $actualCount,
+            'shares_count' => $post->shares_count,
         ]);
+    }
+
+    /**
+     * Increment shares and redirect to external share URL (GET, CSRF-less).
+     */
+    public function shareRedirect(Request $request, Post $post)
+    {
+        $validated = $request->validate([
+            'platform' => 'nullable|string|in:twitter,linkedin,facebook,instagram,whatsapp,email,telegram',
+            'url' => 'required|string',
+        ]);
+
+        if (Auth::check()) {
+            \App\Models\PostShare::recordShare($post->id, Auth::id(), $validated['platform'] ?? null);
+            $actualCount = $post->getActualSharesCount();
+            $post->update(['shares_count' => $actualCount]);
+        } else {
+            $post->increment('shares_count');
+        }
+
+        return redirect()->away($validated['url']);
+    }
+
+    /**
+     * Lightweight GET ping to count a share without redirecting (e.g., copy button).
+     */
+    public function sharePing(Request $request, Post $post)
+    {
+        $validated = $request->validate([
+            'platform' => 'nullable|string|in:twitter,linkedin,facebook,instagram,whatsapp,email,telegram,copy',
+        ]);
+
+        if (Auth::check()) {
+            \App\Models\PostShare::recordShare($post->id, Auth::id(), $validated['platform'] ?? null);
+            $actualCount = $post->getActualSharesCount();
+            $post->update(['shares_count' => $actualCount]);
+        } else {
+            $post->increment('shares_count');
+        }
+
+        return response()->noContent();
     }
 
     /**
@@ -406,12 +454,58 @@ class PostController extends Controller
         return array_values($hashtags);
     }
 
-    /**
-     * Remove hashtags from content text.
-     */
-    private function removeHashtagsFromContent(string $content): string
+    private function linkifyUrls(string $text): string
     {
-        // Remove hashtags from content (keep the text, remove the # and word)
-        return preg_replace('/#\w+\s*/', '', $content);
+        $pattern = '/(?<![\"\'>])(https?:\/\/[^\s<]+)/i';
+        return preg_replace_callback($pattern, function ($matches) {
+            $url = $matches[1];
+            $display = strlen($url) > 80 ? substr($url, 0, 77).'…' : $url;
+            $safeUrl = e($url);
+            $safeDisplay = e($display);
+            return '<a href="'.$safeUrl.'" target="_blank" rel="nofollow noopener" class="text-indigo-600 hover:underline">'.$safeDisplay.'</a>';
+        }, e($text));
+    }
+
+    private function highlightHashtags(string $html): string
+    {
+        // Replace hashtags only in text nodes (outside of HTML tags)
+        return preg_replace_callback('/(^|>)([^<]+)(?=<|$)/', function ($m) {
+            $prefix = $m[1];
+            $text = $m[2];
+            $replaced = preg_replace('/(^|\s)#(\w+)/', '$1<span class="text-indigo-600 font-semibold">#$2</span>', $text);
+            return $prefix.$replaced;
+        }, $html);
+    }
+
+    private function formatContent(string $raw): string
+    {
+        $withLinks = $this->linkifyUrls($raw);
+        return $this->highlightHashtags($withLinks);
+    }
+
+    private function toRawTextFromFormatted(string $html): string
+    {
+        if ($html === '') {
+            return '';
+        }
+
+        // Replace anchor tags with their href (fallback to inner text if no href)
+        $intermediate = preg_replace_callback('/<a[^>]*href="([^"]*)"[^>]*>(.*?)<\/a>/is', function ($m) {
+            $href = trim($m[1] ?? '');
+            $text = trim(strip_tags($m[2] ?? ''));
+            return $href !== '' ? $href : $text;
+        }, $html);
+
+        // Replace <br> with newlines
+        $intermediate = preg_replace('/<br\s*\/?>(\r?\n)?/i', "\n", $intermediate);
+
+        // Strip remaining tags and decode entities
+        $stripped = strip_tags($intermediate);
+        $decoded = html_entity_decode($stripped, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
+        // Normalize whitespace
+        $decoded = preg_replace("/\r?\n\s*\r?\n+/", "\n\n", $decoded);
+
+        return $decoded;
     }
 }

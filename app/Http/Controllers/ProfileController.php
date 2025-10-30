@@ -22,7 +22,44 @@ class ProfileController extends Controller
     {
         $user = $id ? User::with(['experiences', 'portfolios'])->findOrFail($id) : User::with(['experiences', 'portfolios'])->findOrFail(Auth::id());
 
+        // Support internal pagination for recent posts via query parameter (used by initial next page URL)
+        if ($request->has('posts_page')) {
+            return $this->userPosts($request, $user->id);
+        }
+
         return view('profile.show', compact('user'));
+    }
+
+    /**
+     * Return paginated recent posts HTML for a user (used by infinite scroll on profile page).
+     */
+    public function userPosts(Request $request, $id)
+    {
+        $perPage = (int) ($request->input('per_page', 5));
+        $page = (int) ($request->input('page', $request->input('posts_page', 1)));
+
+        $user = User::findOrFail($id);
+
+        $paginator = $user->posts()
+            ->with(['user', 'likes' => function ($query) {
+                $query->where('user_id', Auth::id());
+            }])
+            ->latest()
+            ->paginate($perPage, ['*'], 'page', $page);
+
+        // Render posts into HTML using the same card component used in home page
+        $html = '';
+        foreach ($paginator->items() as $post) {
+            // Calculate if the current user liked this post
+            $post->is_liked = $post->likes->isNotEmpty();
+            $html .= view('components.post-card', ['post' => $post])->render();
+        }
+
+        return response()->json([
+            'html' => $html,
+            'next_page' => $paginator->hasMorePages() ? $paginator->currentPage() + 1 : null,
+            'has_more' => $paginator->hasMorePages(),
+        ]);
     }
 
     /**
@@ -212,8 +249,9 @@ class ProfileController extends Controller
         ]);
 
         // If update was successful and no validation errors, redirect to home
-        if ($result instanceof \Illuminate\Http\RedirectResponse && !$result->getSession()->has('errors')) {
+        if ($result instanceof \Illuminate\Http\RedirectResponse && ! $result->getSession()->has('errors')) {
             \Log::info('Redirecting to home after profile completion');
+
             return redirect()->route('home')->with('success', 'Profile completed successfully!');
         }
 

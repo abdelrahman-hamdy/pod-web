@@ -12,33 +12,43 @@ class InternshipApplication extends Model
 
     protected $fillable = [
         'user_id',
+        'internship_id',
         'full_name',
         'email',
         'phone',
         'university',
         'major',
-        'graduation_year',
-        'gpa',
+        'graduation_status',
         'experience',
-        'skills',
-        'interests',
+        'interest_categories',
         'availability_start',
         'availability_end',
         'motivation',
-        'portfolio_links',
         'status',
     ];
 
-    protected $casts = [
-        'portfolio_links' => 'array',
-        'availability_start' => 'date',
-        'availability_end' => 'date',
-        'gpa' => 'decimal:2',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'interest_categories' => 'array',
+            'availability_start' => 'date',
+            'availability_end' => 'date',
+        ];
+    }
+
+    public function graduationStatus(): ?\App\GraduationStatus
+    {
+        return $this->graduation_status ? \App\GraduationStatus::from($this->graduation_status) : null;
+    }
 
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function internship(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\Internship::class);
     }
 
     public function getStatusColorAttribute(): string

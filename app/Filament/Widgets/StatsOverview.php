@@ -14,6 +14,10 @@ class StatsOverview extends BaseWidget
 {
     protected static ?int $sort = -2;
 
+    protected int|string|array $columnSpan = [
+        'xl' => 12,
+    ];
+
     protected function getStats(): array
     {
         return [
@@ -21,6 +25,11 @@ class StatsOverview extends BaseWidget
                 ->description('Registered members')
                 ->descriptionIcon('heroicon-m-user-group')
                 ->color('success'),
+
+            Stat::make('Business Accounts', User::query()->where('role', 'client')->count())
+                ->description('Companies / clients')
+                ->descriptionIcon('heroicon-m-building-office')
+                ->color('primary'),
 
             Stat::make('Active Posts', Post::count())
                 ->description('Community posts shared')

@@ -22,10 +22,11 @@
                         :name="auth()->user()->name ?? 'User'"
                         size="md"
                         :color="auth()->user()->avatar_color ?? null" />
-                    <div class="flex-1 min-w-0">
+                    <div class="flex-1 min-w-0 relative">
+                        <div id="hashtag-highlight" class="absolute inset-0 p-3 lg:p-4 border border-transparent rounded-lg pointer-events-none overflow-hidden whitespace-pre-wrap break-words text-sm lg:text-base" aria-hidden="true"></div>
                         <textarea name="content" id="post-content" placeholder="Share your thoughts with the community..."
-                            class="w-full p-3 lg:p-4 border border-slate-200 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm lg:text-base"
-                            rows="3"></textarea>
+                            class="w-full p-3 lg:p-4 border border-slate-200 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm lg:text-base relative bg-transparent caret-slate-800"
+                            rows="3" style="color: transparent;"></textarea>
                     </div>
                 </div>
                 <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mt-4 space-y-3 sm:space-y-0 pl-14">
@@ -39,7 +40,8 @@
                         </label>
                     </div>
                     <button type="submit" id="submit-post"
-                        class="bg-indigo-600 text-white px-4 lg:px-6 py-2 rounded-button hover:bg-indigo-700 transition-colors !rounded-button whitespace-nowrap text-sm lg:text-base w-full sm:w-auto">
+                        class="bg-indigo-600 text-white px-4 lg:px-6 py-2 rounded-button hover:bg-indigo-700 transition-colors !rounded-button whitespace-nowrap text-sm lg:text-base w-full sm:w-auto opacity-75 cursor-not-allowed"
+                        disabled>
                         <span id="submit-text">Share Post</span>
                         <div id="submit-loading" class="hidden">
                             <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
@@ -89,7 +91,13 @@
                                             <div class="w-4 h-4 flex items-center justify-center">
                                                 <i class="ri-user-line text-xs"></i>
                                             </div>
-                                            <span class="text-sm font-medium">{{ $event->max_attendees ?? 'Unlimited' }} spots</span>
+                                            <span class="text-sm font-medium">
+                                                @if($event->max_attendees)
+                                                    {{ $event->getAvailableSpots() }} spots left
+                                                @else
+                                                    Unlimited spots
+                                                @endif
+                                            </span>
                                         </div>
                                         <a href="{{ route('events.show', $event) }}"
                                             class="bg-indigo-600 text-white px-4 py-2 rounded-button text-sm hover:bg-indigo-700 transition-colors !rounded-button whitespace-nowrap">
@@ -230,6 +238,10 @@
 @endsection
 
 @push('scripts')
+<!-- Comment Manager Script (must load before post-interactions) -->
+<script src="{{ asset('js/comment-manager.js') }}"></script>
+<!-- Post Interactions Script -->
+<script src="{{ asset('js/post-interactions.js') }}"></script>
 <style>
     .like-btn:hover {
         color: #ef4444 !important;
@@ -252,35 +264,129 @@
     // Set current user ID for JavaScript
     window.currentUserId = {{ auth()->id() }};
     
-    // Toggle post options dropdown
-    window.togglePostOptions = function(postId) {
-        const dropdown = document.getElementById(`post-options-${postId}`);
-        if (dropdown) {
-            // Close all other dropdowns
-            document.querySelectorAll('[id^="post-options-"]').forEach(menu => {
-                if (menu.id !== `post-options-${postId}`) {
-                    menu.classList.add('hidden');
-                }
-            });
-            
-            // Toggle current dropdown
-            dropdown.classList.toggle('hidden');
-        }
-    };
-    
-    // Close dropdowns when clicking outside
-    document.addEventListener('click', function(event) {
-        if (!event.target.closest('[id^="post-options-"]') && !event.target.closest('button[onclick*="togglePostOptions"]')) {
-            document.querySelectorAll('[id^="post-options-"]').forEach(menu => {
-                menu.classList.add('hidden');
-            });
-        }
-    });
+    // Post options toggle is handled by post-interactions.js
     
     document.addEventListener("DOMContentLoaded", function () {
         let currentOffset = {{ $posts->count() }};
         let isLoading = false;
         let hasMorePosts = true;
+
+        // Hashtag highlighting with overlay
+        const postContentTextarea = document.getElementById('post-content');
+        const hashtagHighlight = document.getElementById('hashtag-highlight');
+
+        function syncHighlight() {
+            if (!postContentTextarea || !hashtagHighlight) return;
+
+            const text = postContentTextarea.value;
+            const highlightedText = text
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/(#\w+)/g, '<span style="color: #4f46e5; font-weight: 600;">$1</span>')
+                .replace(/\n/g, '<br>');
+            
+            hashtagHighlight.innerHTML = highlightedText + ' '; 
+            hashtagHighlight.scrollTop = postContentTextarea.scrollTop;
+            hashtagHighlight.scrollLeft = postContentTextarea.scrollLeft;
+        }
+
+        if (postContentTextarea) {
+            postContentTextarea.addEventListener('input', syncHighlight);
+            postContentTextarea.addEventListener('scroll', syncHighlight);
+        }
+
+        function createPostCardHTML(post) {
+            const postContentHtml = (post.content || '')
+                .replace(/&/g, '&amp;')
+                .replace(/\u003c/g, '&lt;')
+                .replace(/\u003e/g, '&gt;')
+                .replace(/(#\\w+)/g, '\u003cspan class="text-indigo-600 font-semibold"\u003e$1\u003c/span\u003e');
+
+            const avatarHtml = post.user.avatar
+                ? `\u003cimg src="${post.user.avatar}" alt="${post.user.name || 'User'}" class="w-8 h-8 rounded-full object-cover"\u003e`
+                : `\u003cdiv class="w-8 h-8 ${post.user.avatar_color || 'bg-slate-100 text-slate-600'} rounded-full flex items-center justify-center"\u003e
+                       \u003cspan class="font-semibold text-sm"\u003e${post.user.name ? post.user.name.substring(0, 2).toUpperCase() : 'U'}\u003c/span\u003e
+                   \u003c/div\u003e`;
+
+            const optionsMenu = post.user_id === window.currentUserId ? `
+                <div class="relative">
+                    <button onclick="togglePostOptions(${post.id})" class="text-slate-400 hover:text-slate-600 transition-colors p-1">
+                        <i class="ri-more-2-fill text-lg"></i>
+                    </button>
+                    <div id="post-options-${post.id}" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-slate-200 z-10">
+                        <div class="py-1">
+                            <a href="/posts/${post.id}/edit" class="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors">
+                                <i class="ri-pencil-line mr-2"></i> Edit
+                            </a>
+                            <button onclick="deletePost(${post.id})" class="w-full text-left flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors">
+                                <i class="ri-delete-bin-line mr-2"></i> Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>` : '';
+            
+            return `
+                <article class="bg-white rounded-xl shadow-sm border border-slate-100 p-6 relative">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center space-x-3 flex-1">
+                            <a href="/profile/${post.user.id}" class="flex-shrink-0">
+                                ${avatarHtml}
+                            </a>
+                            <div>
+                                <a href="/profile/${post.user.id}" class="hover:text-indigo-600 transition-colors flex items-center">
+                                    <h4 class="font-semibold text-slate-800">${post.user.name}</h4>
+                                </a>
+                                <p class="text-sm text-slate-500">${post.user.job_title || 'Member'} • 
+                                    <a href="/posts/${post.id}" class="hover:text-indigo-600 transition-colors">Just now</a>
+                                </p>
+                            </div>
+                        </div>
+                        ${optionsMenu}
+                    </div>
+                    <p class="text-slate-700 mb-4 whitespace-pre-line">${postContentHtml}</p>
+                    ${post.images && post.images.length > 0 ? `
+                    <div class="mb-4" data-post-images='${JSON.stringify(post.images)}'>
+                        <div class="grid ${post.images.length === 1 ? 'grid-cols-1' : 'grid-cols-2'} gap-2">
+                            ${post.images.slice(0, 4).map((image, index) => `
+                                <div class="relative w-full aspect-square cursor-pointer group" onclick="openLightbox(${post.id}, ${index})" data-post-id="${post.id}" data-image-index="${index}">
+                                    <img src="/storage/${image}" 
+                                         alt="Post image" 
+                                         class="w-full h-full object-cover group-hover:opacity-90 transition-opacity rounded-lg">
+                                    ${index === 3 && post.images.length > 4 ? `
+                                        <div class="absolute inset-0 bg-black bg-opacity-60 flex items-center justify-center rounded-lg">
+                                            <div class="text-center text-white">
+                                                <div class="text-4xl font-bold mb-1">+${post.images.length - 4}</div>
+                                                <div class="text-xl">more photos</div>
+                                            </div>
+                                        </div>
+                                    ` : ''}
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+                    <div class="-mx-6 -mb-6 border-t border-slate-100">
+                        <div class="grid grid-cols-3 divide-x divide-slate-100">
+                            <button class="like-btn flex items-center justify-center space-x-2 py-4 px-6 transition-colors text-slate-500" data-post-id="${post.id}" data-liked="false">
+                                <div class="w-5 h-5 flex items-center justify-center"><i class="ri-heart-line"></i></div>
+                                <span class="text-sm">Like</span>
+                                <span class="text-sm likes-count">0</span>
+                            </button>
+                            <button class="comment-btn flex items-center justify-center space-x-2 hover:text-indigo-600 transition-colors text-slate-500 py-4 px-6" data-post-id="${post.id}">
+                                <div class="w-5 h-5 flex items-center justify-center"><i class="ri-chat-3-line"></i></div>
+                                <span class="text-sm">Comment</span>
+                                <span class="text-sm comments-count">0</span>
+                            </button>
+                            <button onclick="openShareModal(${post.id})" class="flex items-center justify-center space-x-2 hover:text-indigo-600 transition-colors text-slate-500 py-4 px-6">
+                                <div class="w-5 h-5 flex items-center justify-center"><i class="ri-share-line"></i></div>
+                                <span class="text-sm">Share</span>
+                            </button>
+                        </div>
+                    </div>
+                </article>
+            `;
+        }
 
         // Post form submission
         const postForm = document.getElementById('post-form');
@@ -292,6 +398,12 @@
             e.preventDefault();
             
             if (isLoading) return;
+
+            // The hidden textarea is no longer used, so we directly get the value from the main textarea
+            const postContentValue = document.getElementById('post-content').value.trim();
+            if (postContentValue === '' && (selectedFiles.length === 0 || document.getElementById('post-images').files.length === 0)) {
+                return;
+            }
             
             // Validate file sizes before submitting
             const validationImageInput = document.getElementById('post-images');
@@ -323,6 +435,13 @@
             
             isLoading = true;
             submitBtn.disabled = true;
+
+            // Lock button size to preserve width/height during loading
+            const btnWidth = submitBtn.offsetWidth;
+            const btnHeight = submitBtn.offsetHeight;
+            submitBtn.style.width = btnWidth + 'px';
+            submitBtn.style.height = btnHeight + 'px';
+
             submitText.classList.add('hidden');
             submitLoading.classList.remove('hidden');
 
@@ -334,11 +453,12 @@
             formData.append('_token', csrfToken);
             
             // Add content field (empty string if no text)
-            const postContent = document.getElementById('post-content').value.trim();
-            formData.append('content', postContent || '');
+            formData.append('content', postContentValue || '');
             
             // Add images if any
             const postImageInput = document.getElementById('post-images');
+            // Ensure FileList reflects accumulated files
+            rebuildFileInputFromSelected();
             for (let i = 0; i < postImageInput.files.length; i++) {
                 formData.append('images[]', postImageInput.files[i]);
             }
@@ -372,19 +492,30 @@
 
                 const data = await response.json();
                 
-                if (data.success) {
-                    // Add new post to the top of the feed
+                if (data.success && data.post) {
+                    // Add new post to the top of the feed with fade-in
                     const postsContainer = document.getElementById('posts-container');
-                    const newPostHtml = createPostHtml(data.post);
-                    postsContainer.insertAdjacentHTML('afterbegin', newPostHtml);
+                    const html = createPostHtml(data.post);
+                    const wrapper = document.createElement('div');
+                    wrapper.innerHTML = html.trim();
+                    const newEl = wrapper.firstElementChild;
+                    // start hidden and slightly translated
+                    newEl.classList.add('opacity-0', 'translate-y-1', 'transition', 'duration-300', 'ease-out');
+                    postsContainer.insertBefore(newEl, postsContainer.firstChild);
+                    // trigger transition
+                    requestAnimationFrame(() => {
+                        newEl.classList.remove('opacity-0', 'translate-y-1');
+                    });
                     
                     // Clear form
                     postForm.reset();
+                    hashtagHighlight.innerHTML = ''; // Clear highlight div
                     document.getElementById('image-preview').classList.add('hidden');
                     document.getElementById('preview-container').innerHTML = '';
+                    selectedFiles = [];
                     
-                    // Show success message
-                    showSuccess('Your post has been shared successfully!', 'Post Published');
+                    // Re-validate button state after reset
+                    validatePostButton();
                 } else {
                     console.error('Server error:', data.message);
                     showError('Unable to create post. Please try again.', 'Post Error');
@@ -394,9 +525,13 @@
                 showError('Unable to create post. Please check your connection and try again.', 'Network Error');
             } finally {
                 isLoading = false;
-                submitBtn.disabled = false;
+                // Re-enable/disable based on validity
+                validatePostButton();
                 submitText.classList.remove('hidden');
                 submitLoading.classList.add('hidden');
+                // Unlock button size
+                submitBtn.style.width = '';
+                submitBtn.style.height = '';
             }
         });
 
@@ -404,82 +539,117 @@
         const imageInput = document.getElementById('post-images');
         const imagePreview = document.getElementById('image-preview');
         const previewContainer = document.getElementById('preview-container');
+        
+        // Keep selected files across multiple selections
+        let selectedFiles = [];
 
-        imageInput.addEventListener('change', function(e) {
-            const files = Array.from(e.target.files);
-            const maxFiles = 10; // Maximum 10 images
-            const maxSize = 2 * 1024 * 1024; // 2MB in bytes
-            const oversizedFiles = [];
-            
-            // Check file count
-            if (files.length > maxFiles) {
-                showError(`You can upload a maximum of ${maxFiles} images per post. Please select fewer images.`, 'Too Many Images');
-                e.target.value = ''; // Clear the input
-                return;
-            }
+        function rebuildFileInputFromSelected() {
+            const dt = new DataTransfer();
+            selectedFiles.forEach(file => dt.items.add(file));
+            imageInput.files = dt.files;
+        }
 
-            // Validate file sizes immediately
-            files.forEach(file => {
-                if (file.size > maxSize) {
-                    oversizedFiles.push(file.name);
-                }
-            });
-            
-            if (oversizedFiles.length > 0) {
-                showError(`The following images are too large (max 2MB each): ${oversizedFiles.join(', ')}. Please choose smaller images.`, 'File Size Error');
-                e.target.value = ''; // Clear the input
-                return;
-            }
-
+        function renderPreviews() {
             previewContainer.innerHTML = '';
-            
-            files.forEach((file, index) => {
-                if (file.type.startsWith('image/')) {
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        const previewItem = document.createElement('div');
-                        previewItem.className = 'relative inline-block';
-                        previewItem.dataset.index = index;
-                        
-                        const img = document.createElement('img');
-                        img.src = e.target.result;
-                        img.className = 'w-20 h-20 object-cover rounded-lg';
-                        
-                        const removeBtn = document.createElement('button');
-                        removeBtn.type = 'button';
-                        removeBtn.className = 'absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors';
-                        removeBtn.innerHTML = '<i class="ri-close-line text-xs"></i>';
-                        removeBtn.onclick = function() {
-                            removeImage(index);
-                        };
-                        
-                        previewItem.appendChild(img);
-                        previewItem.appendChild(removeBtn);
-                        previewContainer.appendChild(previewItem);
-                    };
-                    reader.readAsDataURL(file);
-                }
-            });
-
-            if (files.length > 0) {
-                imagePreview.classList.remove('hidden');
-            } else {
+            if (selectedFiles.length === 0) {
                 imagePreview.classList.add('hidden');
+                return;
             }
-        });
+            imagePreview.classList.remove('hidden');
+
+            selectedFiles.forEach((file, index) => {
+                if (!file.type.startsWith('image/')) return;
+                const reader = new FileReader();
+                reader.onload = function (ev) {
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'relative inline-block';
+                    wrapper.dataset.index = String(index);
+
+                    const img = document.createElement('img');
+                    img.src = ev.target.result;
+                    img.className = 'w-20 h-20 object-cover rounded-lg';
+
+                    const removeBtn = document.createElement('button');
+                    removeBtn.type = 'button';
+                    removeBtn.className = 'absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors';
+                    removeBtn.innerHTML = '<i class="ri-close-line text-xs"></i>';
+                    removeBtn.addEventListener('click', function () {
+                        removeImage(index);
+                    });
+
+                    wrapper.appendChild(img);
+                    wrapper.appendChild(removeBtn);
+                    previewContainer.appendChild(wrapper);
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // Render image previews when files are selected (accumulate instead of replace)
+        if (imageInput && imagePreview && previewContainer) {
+            imageInput.addEventListener('change', function (e) {
+                const newFiles = Array.from(imageInput.files || []);
+                if (newFiles.length === 0) {
+                    // User canceled dialog; do nothing
+                    validatePostButton();
+                    return;
+                }
+
+                // Validate new files first
+                const maxSize = 2 * 1024 * 1024; // 2MB
+                const oversized = newFiles.filter(f => f.size > maxSize).map(f => f.name);
+                if (oversized.length > 0) {
+                    showError(`The following images are too large (max 2MB each): ${oversized.join(', ')}`, 'File Size Error');
+                    // Do not add oversized files
+                    // Keep previously selected files intact
+                }
+
+                // Merge valid new files
+                const validNew = newFiles.filter(f => f.size <= maxSize);
+                selectedFiles = selectedFiles.concat(validNew);
+
+                // Enforce max count 10
+                if (selectedFiles.length > 10) {
+                    showError(`You can upload a maximum of 10 images per post. Please remove ${selectedFiles.length - 10} image(s).`, 'Too Many Images');
+                    selectedFiles = selectedFiles.slice(0, 10);
+                }
+
+                // Rebuild input FileList and re-render
+                rebuildFileInputFromSelected();
+                renderPreviews();
+                validatePostButton();
+
+                // Clear the real input so selecting the same file again retriggers change
+                imageInput.value = '';
+            });
+        }
+
+        // Enable submit button only when there is text or at least one image
+        function validatePostButton() {
+            if (!submitBtn || !postContentTextarea || !imageInput) return;
+            const hasText = postContentTextarea.value.trim() !== '';
+            const hasImages = (selectedFiles && selectedFiles.length > 0) || imageInput.files.length > 0;
+            const isValid = hasText || hasImages;
+            submitBtn.disabled = !isValid || isLoading;
+            if (!isValid) {
+                submitBtn.classList.add('opacity-75', 'cursor-not-allowed');
+            } else {
+                submitBtn.classList.remove('opacity-75', 'cursor-not-allowed');
+            }
+        }
+
+        // Initialize and bind validation listeners
+        validatePostButton();
+        if (postContentTextarea) postContentTextarea.addEventListener('input', validatePostButton);
+        if (imageInput) imageInput.addEventListener('change', validatePostButton);
 
         // Function to remove an image from preview
         function removeImage(index) {
-            const files = Array.from(imageInput.files);
-            files.splice(index, 1);
-            
-            // Create new FileList
-            const dt = new DataTransfer();
-            files.forEach(file => dt.items.add(file));
-            imageInput.files = dt.files;
-            
-            // Re-render preview
-            imageInput.dispatchEvent(new Event('change'));
+            if (index < 0 || index >= selectedFiles.length) return;
+            selectedFiles.splice(index, 1);
+            rebuildFileInputFromSelected();
+            renderPreviews();
+            validatePostButton();
         }
 
         // Infinite scroll
@@ -550,51 +720,23 @@
             
             carousel.addEventListener("mousemove", (e) => {
                 if (!isDown) return;
-                e.preventDefault();
+                
                 const x = e.pageX - carousel.offsetLeft;
                 const walk = (x - startX) * 2;
-                carousel.scrollLeft = scrollLeft - walk;
+                
+                // Only prevent default if user is actually trying to scroll horizontally
+                // Check if horizontal movement is greater than vertical movement
+                const deltaX = Math.abs(e.movementX);
+                const deltaY = Math.abs(e.movementY);
+                
+                if (deltaX > deltaY) {
+                    e.preventDefault();
+                    carousel.scrollLeft = scrollLeft - walk;
+                }
             });
         }
 
-        // Post interactions (like buttons and comment buttons)
-        document.addEventListener('click', function(e) {
-            if (e.target.closest('.like-btn')) {
-                const button = e.target.closest('.like-btn');
-                const postId = button.dataset.postId;
-                const icon = button.querySelector('i');
-                const countSpan = button.querySelector('.likes-count');
-                const isLiked = button.dataset.liked === 'true';
-                
-                fetch(`/posts/${postId}/like`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        if (data.liked) {
-                            icon.classList.remove("ri-heart-line");
-                            icon.classList.add("ri-heart-fill");
-                            button.classList.remove("text-slate-500");
-                            button.classList.add("text-red-500");
-                            button.dataset.liked = 'true';
-                        } else {
-                            icon.classList.remove("ri-heart-fill");
-                            icon.classList.add("ri-heart-line");
-                            button.classList.remove("text-red-500");
-                            button.classList.add("text-slate-500");
-                            button.dataset.liked = 'false';
-                        }
-                        countSpan.textContent = data.likes_count;
-                    }
-                })
-                .catch(error => console.error('Error:', error));
-            }
-        });
+        // Post interactions are now handled by post-interactions.js
 
         // Smooth card animations - removed hover translateY effects
         // const cards = document.querySelectorAll("article, .bg-white");
@@ -622,7 +764,7 @@
         
         const optionsMenu = post.user_id === window.currentUserId ? `
                 <div class="relative">
-                    <button onclick="togglePostOptions(${post.id})" class="text-slate-400 hover:text-slate-600 transition-colors p-1">
+                    <button onclick="togglePostOptions(${post.id})" class="post-options-trigger text-slate-400 hover:text-slate-600 transition-colors p-1">
                         <i class="ri-more-2-fill text-lg"></i>
                     </button>
                     
@@ -641,6 +783,9 @@
                 </div>
         ` : '';
         
+        // Use server-formatted HTML content (already linkified and hashtagged)
+        const postContentHtml = post.content || '';
+        
         return `
             <article class="bg-white rounded-xl shadow-[0_8px_24px_rgba(0,0,0,0.04)] p-6 relative">
                 <div class="flex items-center justify-between mb-4">
@@ -655,7 +800,7 @@
                     </div>
                     ${optionsMenu}
                 </div>
-                ${post.content ? `<p class="text-slate-700 mb-4">${post.content}</p>` : ''}
+                ${post.content ? `<p class="text-slate-700 mb-4 whitespace-pre-line">${postContentHtml}</p>` : ''}
                 ${post.images && post.images.length > 0 ? `
                     <div class="mb-4" data-post-images='${JSON.stringify(post.images)}'>
                         ${post.images.length === 1 ? `
@@ -688,13 +833,6 @@
                         `}
                     </div>
                 ` : ''}
-                ${post.hashtags && post.hashtags.length > 0 ? `
-                    <div class="flex flex-wrap gap-2 mb-4">
-                        ${post.hashtags.map(hashtag => `
-                            <span class="bg-indigo-100 text-indigo-600 px-2 py-1 rounded-full text-xs">${hashtag}</span>
-                        `).join('')}
-                    </div>
-                ` : ''}
                 <div class="-mx-6 -mb-6 border-t border-slate-100">
                     <div class="grid grid-cols-3 divide-x divide-slate-100">
                         <button class="like-btn flex items-center justify-center space-x-2 py-4 px-6 transition-colors ${post.is_liked ? 'text-red-500' : 'text-slate-500'}" data-post-id="${post.id}" data-liked="${post.is_liked || false}">
@@ -723,455 +861,7 @@
         `;
     }
 
-    // Comment Modal Management
-    class CommentManager {
-        constructor() {
-            this.modal = document.getElementById('comment-modal');
-            this.backdrop = document.getElementById('comment-modal-backdrop');
-            this.currentPostId = null;
-            this.isReplyMode = false;
-            this.parentCommentId = null;
-            
-            this.initializeElements();
-            this.bindEvents();
-        }
-
-        initializeElements() {
-            this.modalPostContent = document.getElementById('modal-post-content');
-            this.commentsList = document.getElementById('comments-list');
-            this.loadingComments = document.getElementById('loading-comments');
-            this.noComments = document.getElementById('no-comments');
-            this.commentForm = document.getElementById('comment-form');
-            this.postIdInput = document.getElementById('post-id');
-            this.parentCommentInput = document.getElementById('parent-comment-id');
-            this.commentContent = document.getElementById('comment-content');
-            this.submitBtn = document.getElementById('submit-comment');
-            this.submitText = document.getElementById('submit-text');
-            this.submitLoading = document.getElementById('submit-loading');
-            this.replyingTo = document.getElementById('replying-to');
-            this.replyToUser = document.getElementById('reply-to-user');
-            this.cancelReply = document.getElementById('cancel-reply');
-        }
-
-        bindEvents() {
-            // Modal open/close events
-            document.addEventListener('click', (e) => {
-                if (e.target.closest('.comment-btn')) {
-                    const button = e.target.closest('.comment-btn');
-                    const postId = button.dataset.postId;
-                    this.openModal(postId);
-                }
-            });
-
-            // Close modal on backdrop click
-            if (this.backdrop) {
-                this.backdrop.addEventListener('click', () => {
-                    this.closeModal();
-                });
-            }
-
-            // Comment form events
-            if (this.commentContent) {
-                this.commentContent.addEventListener('input', () => {
-                    this.toggleSubmitButton();
-                });
-            }
-
-            if (this.commentForm) {
-                this.commentForm.addEventListener('submit', (e) => {
-                    e.preventDefault();
-                    this.submitComment();
-                });
-            }
-
-            if (this.cancelReply) {
-                this.cancelReply.addEventListener('click', () => {
-                    this.cancelReplyMode();
-                });
-            }
-
-            // Dynamic comment events (using event delegation)
-            if (this.commentsList) {
-                this.commentsList.addEventListener('click', (e) => {
-                    if (e.target.closest('.reply-btn')) {
-                        const button = e.target.closest('.reply-btn');
-                        const commentId = button.dataset.commentId;
-                        const userName = button.dataset.userName;
-                        this.startReply(commentId, userName);
-                    } else if (e.target.closest('.edit-comment-btn')) {
-                        const button = e.target.closest('.edit-comment-btn');
-                        const commentId = button.dataset.commentId;
-                        this.startEdit(commentId);
-                    } else if (e.target.closest('.delete-comment-btn')) {
-                        const button = e.target.closest('.delete-comment-btn');
-                        const commentId = button.dataset.commentId;
-                        this.deleteComment(commentId);
-                    } else if (e.target.closest('.cancel-edit-btn')) {
-                        const button = e.target.closest('.cancel-edit-btn');
-                        const commentId = button.closest('.edit-comment-form').dataset.commentId;
-                        this.cancelEdit(commentId);
-                    }
-                });
-
-                // Edit form submission
-                this.commentsList.addEventListener('submit', (e) => {
-                    if (e.target.classList.contains('edit-comment-form')) {
-                        e.preventDefault();
-                        const commentId = e.target.dataset.commentId;
-                        const content = e.target.querySelector('textarea').value;
-                        this.updateComment(commentId, content);
-                    }
-                });
-            }
-        }
-
-        async openModal(postId) {
-            this.currentPostId = postId;
-            if (this.postIdInput) this.postIdInput.value = postId;
-            
-            // Show modal
-            if (this.modal) {
-                this.modal.classList.remove('hidden');
-                document.body.classList.add('overflow-hidden');
-            }
-            
-            // Load post content and comments
-            await Promise.all([
-                this.loadPostContent(postId),
-                this.loadComments(postId)
-            ]);
-        }
-
-        closeModal() {
-            if (this.modal) {
-                this.modal.classList.add('hidden');
-                document.body.classList.remove('overflow-hidden');
-            }
-            this.resetForm();
-            this.currentPostId = null;
-        }
-
-        async loadPostContent(postId) {
-            try {
-                // Get post data from existing DOM
-                const postElement = document.querySelector(`[data-post-id="${postId}"]`).closest('article');
-                if (postElement && this.modalPostContent) {
-                    // Clone the post content
-                    const clonedPost = postElement.cloneNode(true);
-                    
-                    // Remove the action buttons row at the bottom (grid with Like/Comment/Share)
-                    const actionButtonsDiv = clonedPost.querySelector('.grid.grid-cols-3');
-                    if (actionButtonsDiv) actionButtonsDiv.remove();
-                    
-                    // Remove the options menu button
-                    const optionsMenu = clonedPost.querySelector('[data-post-options]');
-                    if (optionsMenu) {
-                        optionsMenu.closest('.relative')?.remove();
-                    }
-                    
-                    // Remove the three-dot menu button
-                    const threeDotsMenu = clonedPost.querySelector('[id^="post-options-"]');
-                    if (threeDotsMenu) {
-                        threeDotsMenu.closest('.relative')?.remove();
-                    }
-                    
-                    // Also remove any border/margin on the article element if present
-                    clonedPost.classList.remove('shadow-[0_8px_24px_rgba(0,0,0,0.04)]');
-                    clonedPost.classList.add('shadow-none');
-                    
-                    this.modalPostContent.innerHTML = '';
-                    this.modalPostContent.appendChild(clonedPost);
-                }
-            } catch (error) {
-                console.error('Error loading post content:', error);
-            }
-        }
-
-        async loadComments(postId) {
-            this.showLoadingState();
-            
-            try {
-                const response = await fetch(`/posts/${postId}/comments`, {
-                    headers: {
-                        'Accept': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                });
-                
-                const data = await response.json();
-                this.renderComments(data.comments.data || []);
-            } catch (error) {
-                console.error('Error loading comments:', error);
-                this.showError('Failed to load comments');
-            }
-        }
-
-        showLoadingState() {
-            if (this.loadingComments && this.noComments && this.commentsList) {
-                this.loadingComments.classList.remove('hidden');
-                this.noComments.classList.add('hidden');
-                this.commentsList.innerHTML = this.loadingComments.outerHTML;
-            }
-        }
-
-        renderComments(comments) {
-            if (!this.commentsList || !this.noComments) return;
-            
-            this.commentsList.innerHTML = '';
-            
-            if (comments.length === 0) {
-                this.commentsList.appendChild(this.noComments.cloneNode(true));
-                this.noComments.classList.remove('hidden');
-            } else {
-                const commentsContainer = document.createElement('div');
-                commentsContainer.className = 'space-y-4';
-                
-                // Flatten nested comments to maximum 3 levels
-                const flattenedComments = this.flattenComments(comments);
-                flattenedComments.forEach(comment => {
-                    commentsContainer.appendChild(this.createCommentElement(comment, comment.level));
-                });
-                
-                this.commentsList.appendChild(commentsContainer);
-            }
-        }
-        
-        flattenComments(comments, level = 0, result = []) {
-            comments.forEach(comment => {
-                // Add the comment with its level
-                const commentWithLevel = { ...comment, level };
-                result.push(commentWithLevel);
-                
-                // If level is less than 2 (maximum 3 levels: 0, 1, 2), add replies
-                // Level 2 replies won't be nested further, but they'll still be displayed
-                if (comment.replies && comment.replies.length > 0) {
-                    if (level < 2) {
-                        // Can still nest further
-                        this.flattenComments(comment.replies, level + 1, result);
-                    } else {
-                        // At max level, flatten replies at same level
-                        comment.replies.forEach(reply => {
-                            const replyWithLevel = { ...reply, level: level + 1 };
-                            result.push(replyWithLevel);
-                            
-                            // Also handle any nested replies at this level
-                            if (reply.replies && reply.replies.length > 0) {
-                                this.flattenComments(reply.replies, level + 1, result);
-                            }
-                        });
-                    }
-                }
-            });
-            
-            return result;
-        }
-
-        createCommentElement(comment, level = 0) {
-            const div = document.createElement('div');
-            div.className = 'comment-item';
-            div.dataset.commentId = comment.id;
-            div.style.marginLeft = `${level * 20}px`;
-            
-            const initials = (comment.user.name || 'U').substring(0, 2).toUpperCase();
-            const avatarColor = comment.user.avatar_color || 'bg-slate-100 text-slate-600';
-            const hasAvatar = comment.user.avatar && comment.user.avatar !== '' && comment.user.avatar !== 'null';
-            
-            div.innerHTML = `
-                <div class="flex space-x-3">
-                    <a href="/profile/${comment.user.id}" class="flex-shrink-0">
-                        <div class="relative inline-flex items-center justify-center w-8 h-8 text-sm rounded-full ${avatarColor} font-medium overflow-hidden">
-                            ${hasAvatar ? `
-                                <img src="${comment.user.avatar}" alt="${comment.user.name || 'User'}" 
-                                     class="w-full h-full object-cover rounded-full"
-                                     onerror="this.onerror=null; this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                                <div class="w-full h-full flex items-center justify-center rounded-full" style="display: none;">
-                                    ${initials}
-                                </div>
-                            ` : `
-                                <div class="w-full h-full flex items-center justify-center rounded-full">
-                                    ${initials}
-                                </div>
-                            `}
-                        </div>
-                    </a>
-                    
-                    <div class="flex-1 min-w-0">
-                        <div class="bg-slate-100 rounded-lg p-3">
-                            <div class="flex items-center space-x-2 mb-1">
-                                <a href="/profile/${comment.user.id}" class="hover:text-indigo-600 transition-colors">
-                                    <h4 class="font-semibold text-sm text-slate-800 flex items-center">${comment.user.name || 'Anonymous'}${(comment.user.role === 'client' || comment.user.role === 'admin' || comment.user.role === 'superadmin') ? (() => { const isAdmin = comment.user.role === 'admin' || comment.user.role === 'superadmin'; const tooltip = isAdmin ? 'Administrator' : 'Business Account'; return `<span class="inline-flex items-center justify-center w-4 h-4 bg-emerald-500 rounded-full flex-shrink-0 ml-1.5 badge-group relative" title="${tooltip}" aria-label="${tooltip}" onclick="event.stopPropagation();" onmouseenter="event.stopPropagation();"><i class="ri-check-line text-white text-xs leading-none"></i><span class="badge-tooltip absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-slate-900 text-white text-xs rounded whitespace-nowrap transition-opacity pointer-events-none z-50">${tooltip}<span class="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1 border-4 border-transparent border-t-slate-900"></span></span></span>`; })() : ''}</h4>
-                                </a>
-                                <span class="text-xs text-slate-500">${this.formatDate(comment.created_at)}</span>
-                            </div>
-                            <p class="text-sm text-slate-700 whitespace-pre-line">${comment.content}</p>
-                        </div>
-                        
-                        <div class="flex items-center space-x-4 mt-2 text-xs text-slate-500">
-                            <button class="reply-btn hover:text-indigo-600 transition-colors" data-comment-id="${comment.id}" data-user-name="${comment.user.name || 'User'}">
-                                <i class="ri-reply-line mr-1"></i>Reply
-                            </button>
-                        </div>
-                        
-                        <div id="edit-form-${comment.id}" class="hidden mt-3">
-                            <form class="edit-comment-form" data-comment-id="${comment.id}">
-                                <textarea
-                                    class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none text-sm"
-                                    rows="3"
-                                    required
-                                >${comment.content}</textarea>
-                                <div class="flex items-center justify-end space-x-2 mt-2">
-                                    <button type="button" class="cancel-edit-btn px-3 py-1 text-sm text-slate-600 hover:text-slate-800 transition-colors">
-                                        Cancel
-                                    </button>
-                                    <button type="submit" class="px-3 py-1 text-sm bg-indigo-600 text-white rounded hover:bg-indigo-700 transition-colors">
-                                        Save
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-            `;
-            
-            return div;
-        }
-
-        formatDate(dateString) {
-            const date = new Date(dateString);
-            const now = new Date();
-            const diffInSeconds = Math.floor((now - date) / 1000);
-            
-            if (diffInSeconds < 60) return 'just now';
-            if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m`;
-            if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h`;
-            if (diffInSeconds < 2592000) return `${Math.floor(diffInSeconds / 86400)}d`;
-            
-            return date.toLocaleDateString();
-        }
-
-        async submitComment() {
-            if (!this.commentContent || !this.submitBtn) return;
-            
-            const content = this.commentContent.value.trim();
-            if (!content || this.submitBtn.disabled) return;
-
-            this.setLoadingState(true);
-
-            try {
-                const response = await fetch(`/posts/${this.currentPostId}/comments`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                        'X-Requested-With': 'XMLHttpRequest'
-                    },
-                    body: JSON.stringify({
-                        content: content,
-                        parent_id: this.parentCommentId
-                    })
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    // Update comments count in modal and on page
-                    this.updateCommentsCount(data.comments_count);
-                    
-                    // Reload comments to show the new comment
-                    await this.loadComments(this.currentPostId);
-                    
-                    // Reset form
-                    this.resetForm();
-                } else {
-                    throw new Error(data.message || 'Failed to post comment');
-                }
-            } catch (error) {
-                console.error('Error posting comment:', error);
-                alert('Failed to post comment. Please try again.');
-            } finally {
-                this.setLoadingState(false);
-            }
-        }
-
-        startReply(commentId, userName) {
-            this.isReplyMode = true;
-            this.parentCommentId = commentId;
-            if (this.parentCommentInput) this.parentCommentInput.value = commentId;
-            if (this.replyToUser) this.replyToUser.textContent = userName;
-            if (this.replyingTo) this.replyingTo.classList.remove('hidden');
-            if (this.commentContent) {
-                this.commentContent.placeholder = `Reply to ${userName}...`;
-                this.commentContent.focus();
-            }
-            if (this.submitText) this.submitText.textContent = 'Reply';
-        }
-
-        cancelReplyMode() {
-            this.isReplyMode = false;
-            this.parentCommentId = null;
-            if (this.parentCommentInput) this.parentCommentInput.value = '';
-            if (this.replyingTo) this.replyingTo.classList.add('hidden');
-            if (this.commentContent) this.commentContent.placeholder = 'Write a comment...';
-            if (this.submitText) this.submitText.textContent = 'Comment';
-        }
-
-        updateCommentsCount(count) {
-            // Update count on the main page
-            const commentBtn = document.querySelector(`[data-post-id="${this.currentPostId}"].comment-btn`);
-            if (commentBtn) {
-                const countSpan = commentBtn.querySelector('.comments-count');
-                if (countSpan) {
-                    countSpan.textContent = count;
-                }
-            }
-        }
-
-
-        toggleSubmitButton() {
-            if (this.commentContent && this.submitBtn) {
-                const content = this.commentContent.value.trim();
-                const isValid = content.length > 0 && content.length <= 3000;
-                this.submitBtn.disabled = !isValid;
-            }
-        }
-
-        setLoadingState(isLoading) {
-            if (this.submitBtn && this.submitText && this.submitLoading) {
-                this.submitBtn.disabled = isLoading;
-                
-                if (isLoading) {
-                    this.submitText.classList.add('hidden');
-                    this.submitLoading.classList.remove('hidden');
-                } else {
-                    this.submitText.classList.remove('hidden');
-                    this.submitLoading.classList.add('hidden');
-                }
-            }
-        }
-
-        resetForm() {
-            if (this.commentContent) {
-                this.commentContent.value = '';
-                this.toggleSubmitButton();
-            }
-            this.cancelReplyMode();
-        }
-
-        showError(message) {
-            if (this.commentsList) {
-                this.commentsList.innerHTML = `
-                    <div class="text-center text-red-500 py-8">
-                        <i class="ri-error-warning-line text-2xl mb-2"></i>
-                        <p>${message}</p>
-                    </div>
-                `;
-            }
-        }
-    }
-
-    // Initialize comment manager
-    window.commentManager = new CommentManager();
+    // Comment Modal Management is now handled by comment-manager.js
 
     // Alert System Functions
     function showAlert(type, message, title = null, id = null) {
@@ -1285,41 +975,7 @@
         showAlert('info', message, title);
     };
 
-    // Delete post function
-    window.deletePost = function(postId) {
-        openConfirmationModal('delete-post-modal', 'Delete Post', 'Are you sure you want to delete this post? This action cannot be undone.', function() {
-            const formData = new FormData();
-            formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
-            formData.append('_method', 'DELETE');
-            
-            fetch(`/posts/${postId}`, {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                }
-            })
-            .then(response => {
-                if (response.ok) {
-                    // Remove the post from the DOM
-                    const postElement = document.querySelector(`[data-post-id="${postId}"]`)?.closest('article');
-                    if (postElement) {
-                        postElement.style.opacity = '0';
-                        postElement.style.transform = 'translateY(-10px)';
-                        setTimeout(() => postElement.remove(), 300);
-                    }
-                    // Reload the page to ensure consistency
-                    setTimeout(() => window.location.reload(), 500);
-                } else {
-                    alert('Failed to delete post. Please try again.');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Failed to delete post. Please try again.');
-            });
-        });
-    };
+    // Delete post function is handled by post-interactions.js
     
     // PhotoSwipe is handled by the main layout
 </script>

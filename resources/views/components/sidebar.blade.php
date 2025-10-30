@@ -35,6 +35,14 @@
                 </a>
             </li>
             <li>
+                <a href="{{ route('internships.index') }}" class="flex items-center px-4 py-3 {{ request()->routeIs('internships.*') ? 'text-indigo-600 bg-indigo-50' : 'text-slate-600' }} hover:text-indigo-600 rounded-lg group transition-colors" title="Internships">
+                    <div class="w-5 h-5 flex items-center justify-center flex-shrink-0">
+                        <i class="ri-graduation-cap-line"></i>
+                    </div>
+                    <span class="sidebar-text ml-3 whitespace-nowrap">Internships</span>
+                </a>
+            </li>
+            <li>
                 <a href="{{ route('hackathons.index') }}" class="flex items-center px-4 py-3 {{ request()->routeIs('hackathons.index') || request()->routeIs('hackathons.show') || request()->routeIs('hackathons.create') || request()->routeIs('hackathons.edit') ? 'text-indigo-600 bg-indigo-50' : 'text-slate-600' }} hover:text-indigo-600 rounded-lg group transition-colors" title="Browse Hackathons">
                     <div class="w-5 h-5 flex items-center justify-center flex-shrink-0">
                         <i class="ri-trophy-line"></i>

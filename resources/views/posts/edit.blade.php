@@ -39,10 +39,13 @@
             <!-- Post Content -->
             <div>
                 <label for="content" class="block text-sm font-medium text-slate-700 mb-2">Post Content</label>
-                <textarea id="content" name="content" rows="8" 
-                          class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none" 
-                          placeholder="Share your thoughts...">{{ old('content', $post->content) }}</textarea>
-                <p class="text-sm text-slate-500 mt-1">Leave empty if you only have images</p>
+                <div class="relative">
+                    <div id="hashtag-highlight" class="absolute inset-0 w-full p-3 border border-transparent rounded-lg resize-none overflow-hidden whitespace-pre-wrap break-words" aria-hidden="true"></div>
+                    <textarea id="content" name="content" rows="8" 
+                        class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none relative bg-transparent caret-slate-800" 
+                        placeholder="Share your thoughts..." style="color: transparent;">{{ old('content', $rawContent ?? ($post->content ?? '')) }}</textarea>
+                </div>
+                
             </div>
             
             <!-- Current Images -->
@@ -98,6 +101,33 @@
 
 @push('scripts')
 <script>
+    // Hashtag highlighting with overlay
+    const postContentTextarea = document.getElementById('content');
+    const hashtagHighlight = document.getElementById('hashtag-highlight');
+
+    function syncHighlight() {
+        if (!postContentTextarea || !hashtagHighlight) return;
+
+        const text = postContentTextarea.value;
+        const highlightedText = text
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/(#\w+)/g, '<span style="color: #4f46e5; font-weight: 600;">$1</span>')
+            .replace(/\n/g, '<br>');
+        
+        hashtagHighlight.innerHTML = highlightedText + ' ';
+        hashtagHighlight.scrollTop = postContentTextarea.scrollTop;
+        hashtagHighlight.scrollLeft = postContentTextarea.scrollLeft;
+    }
+
+    if (postContentTextarea) {
+        postContentTextarea.addEventListener('input', syncHighlight);
+        postContentTextarea.addEventListener('scroll', syncHighlight);
+        // Initial sync for existing content
+        syncHighlight();
+    }
+
     function removeImagePreview(imagePath, index) {
         const imageDiv = document.querySelector(`[data-image-index="${index}"]`);
         

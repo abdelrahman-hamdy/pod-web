@@ -950,10 +950,17 @@
                         <a href="#features" class="text-slate-600 font-semibold hover:text-primary transition-colors">Features</a>
                         <a href="#events" class="text-slate-600 font-semibold hover:text-primary transition-colors">Events</a>
                         <a href="#community" class="text-slate-600 font-semibold hover:text-primary transition-colors">Community</a>
-                        <a href="{{ route('login') }}"
-                            class="bg-gradient-to-r from-primary via-indigo-600 to-purple-600 text-white px-6 py-2 rounded-full hover:bg-indigo-600 transition-colors whitespace-nowrap font-semibold animate-gradient-x">
-                            Join Now
-                        </a>
+                        @auth
+                            <a href="{{ route('home') }}" class="flex items-center space-x-2 text-slate-600 font-semibold hover:text-primary transition-colors border border-slate-200 rounded-full pl-1 pr-4 py-1 hover:border-primary/50">
+                                <img class="w-8 h-8 rounded-full object-cover" src="{{ Auth::user()->avatar ?? 'https://ui-avatars.com/api/?name=' . urlencode(Auth::user()->name) . '&color=7F9CF5&background=EBF4FF' }}" alt="{{ Auth::user()->name }}">
+                                <span>{{ Auth::user()->name }}</span>
+                            </a>
+                        @else
+                            <a href="{{ route('login') }}"
+                                class="bg-gradient-to-r from-primary via-indigo-600 to-purple-600 text-white px-6 py-2 rounded-full hover:bg-indigo-600 transition-colors whitespace-nowrap font-semibold animate-gradient-x">
+                                Join Now
+                            </a>
+                        @endauth
                     </div>
                     <button id="mobile-menu-btn"
                         class="md:hidden w-8 h-8 flex items-center justify-center text-slate-600 hover:text-primary transition-colors">
@@ -975,10 +982,17 @@
                     <a href="#events" class="text-slate-600 font-semibold hover:text-primary transition-colors text-lg py-2">Events</a>
                     <a href="#community" class="text-slate-600 font-semibold hover:text-primary transition-colors text-lg py-2">Community</a>
                     <div class="pt-4">
-                        <a href="{{ route('login') }}"
-                            class="w-full bg-gradient-to-r from-primary via-indigo-600 to-purple-600 text-white px-6 py-3 rounded-full hover:bg-indigo-600 transition-colors font-semibold animate-gradient-x">
-                            Join Now
-                        </a>
+                        @auth
+                            <a href="{{ route('home') }}" class="inline-flex items-center space-x-2 text-slate-600 font-semibold hover:text-primary transition-colors text-lg border border-slate-200 rounded-full pl-1 pr-4 py-1 hover:border-primary/50">
+                                <img class="w-8 h-8 rounded-full object-cover" src="{{ Auth::user()->avatar ?? 'https://ui-avatars.com/api/?name=' . urlencode(Auth::user()->name) . '&color=7F9CF5&background=EBF4FF' }}" alt="{{ Auth::user()->name }}">
+                                <span>{{ Auth::user()->name }}</span>
+                            </a>
+                        @else
+                            <a href="{{ route('login') }}"
+                                class="w-full text-center block bg-gradient-to-r from-primary via-indigo-600 to-purple-600 text-white px-6 py-3 rounded-full hover:bg-indigo-600 transition-colors font-semibold animate-gradient-x">
+                                Join Now
+                            </a>
+                        @endauth
                     </div>
                 </div>
             </div>
@@ -1161,7 +1175,7 @@
                             <!-- Default Content -->
                             <div id="circle-content" class="relative z-10 text-center transition-all duration-500 ease-in-out opacity-100">
                                 <a href="{{ route('register') }}"
-                                    class="w-[100px] h-[100px] sm:w-[140px] sm:h-[140px] md:w-[175px] md:h-[175px] lg:w-[200px] lg:h-[200px] xl:w-[250px] xl:h-[250px] join-community-btn text-white px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12 py-2 sm:py-3 md:py-4 lg:py-5 xl:py-6 rounded-full text-xs sm:text-sm md:text-lg lg:text-xl xl:text-2xl font-bold shadow-2xl shadow-primary/30 hover:shadow-3xl hover:shadow-primary/50 transition-all duration-500 transform hover:scale-110 animate-gradient-x">
+                                    class="w-[100px] h-[100px] sm:w-[140px] sm:h-[140px] md:w-[175px] md:h-[175px] lg:w-[200px] lg:h-[200px] xl:w-[250px] xl:h-[250px] join-community-btn text-white rounded-full text-xs sm:text-sm md:text-lg lg:text-xl xl:text-2xl font-bold shadow-2xl shadow-primary/30 hover:shadow-3xl hover:shadow-primary/50 transition-all duration-500 transform hover:scale-110 animate-gradient-x flex items-center justify-center text-center">
                                     Join Our Community
                                 </a>
                             </div>
@@ -1432,10 +1446,10 @@
                 </div>
             </div>
             <div class="flex justify-center mt-12">
-                <button class="discover-events-btn">
+                <a href="@auth{{ route('events.index') }}@else{{ route('login') }}@endauth" class="discover-events-btn">
                     <span>Discover All Events</span>
                     <i class="ri-arrow-right-line ml-2"></i>
-                </button>
+                </a>
             </div>
         </div>
     </section>
@@ -1589,6 +1603,12 @@
                     </div>
                 </div>
             </div>
+            <div class="flex justify-center mt-12">
+                <a href="@auth{{ route('home') }}@else{{ route('login') }}@endauth" class="discover-events-btn">
+                    <span>View Community Posts</span>
+                    <i class="ri-arrow-right-line ml-2"></i>
+                </a>
+            </div>
         </div>
     </section>
     <section class="py-24 gradient-bg relative overflow-hidden">
@@ -1617,77 +1637,7 @@
             </div>
         </div>
     </section>
-    <footer class="bg-slate-900 text-white py-16">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
-                <div>
-                    <div class="flex items-center space-x-2 mb-6">
-                        <div class="w-12 h-8 flex items-center justify-center">
-                            <img src="{{ asset('storage/assets/pod-logo.png') }}" alt="Logo" class="footer-pod-logo">
-                        </div>
-                        <span class="text-xl font-bold">People Of Data</span>
-                    </div>
-                    <p class="text-slate-400 leading-relaxed mb-6">
-                        Egypt's premier community for AI and data professionals. Join us to network, learn, and grow together.
-                    </p>
-                    <div class="flex space-x-4">
-                        <a href="#" class="w-10 h-10 bg-slate-800 rounded-lg flex items-center justify-center hover:bg-primary transition-colors">
-                            <i class="ri-facebook-fill text-lg"></i>
-                        </a>
-                        <a href="#" class="w-10 h-10 bg-slate-800 rounded-lg flex items-center justify-center hover:bg-primary transition-colors">
-                            <i class="ri-twitter-fill text-lg"></i>
-                        </a>
-                        <a href="#" class="w-10 h-10 bg-slate-800 rounded-lg flex items-center justify-center hover:bg-primary transition-colors">
-                            <i class="ri-linkedin-fill text-lg"></i>
-                        </a>
-                        <a href="#" class="w-10 h-10 bg-slate-800 rounded-lg flex items-center justify-center hover:bg-primary transition-colors">
-                            <i class="ri-instagram-fill text-lg"></i>
-                        </a>
-                    </div>
-                </div>
-                <div>
-                    <h3 class="text-lg font-semibold mb-6">Community</h3>
-                    <ul class="space-y-4 text-slate-400">
-                        <li><a href="#" class="hover:text-white transition-colors">Forums</a></li>
-                        <li><a href="#" class="hover:text-white transition-colors">Events</a></li>
-                        <li><a href="#" class="hover:text-white transition-colors">Webinars</a></li>
-                        <li><a href="#" class="hover:text-white transition-colors">Networking</a></li>
-                        <li><a href="#" class="hover:text-white transition-colors">Mentorship</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h3 class="text-lg font-semibold mb-6">Opportunities</h3>
-                    <ul class="space-y-4 text-slate-400">
-                        <li><a href="#" class="hover:text-white transition-colors">Job Board</a></li>
-                        <li><a href="#" class="hover:text-white transition-colors">Internships</a></li>
-                        <li><a href="#" class="hover:text-white transition-colors">Freelance</a></li>
-                        <li><a href="#" class="hover:text-white transition-colors">Remote Work</a></li>
-                        <li><a href="#" class="hover:text-white transition-colors">Career Advice</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h3 class="text-lg font-semibold mb-6">Stay Updated</h3>
-                    <p class="text-slate-400 mb-4">
-                        Get the latest news, events, and job opportunities delivered to your inbox.
-                    </p>
-                    <form class="newsletter-form">
-                        <input type="email" placeholder="Enter your email" required>
-                        <button type="submit">Subscribe</button>
-                    </form>
-                </div>
-            </div>
-            <div class="border-t border-slate-800 pt-8 flex flex-col md:flex-row justify-between items-center">
-                <p class="text-slate-400 text-sm">
-                    © 2024 People Of Data. All rights reserved.
-                </p>
-                <div class="flex space-x-6 mt-4 md:mt-0">
-                    <a href="#" class="text-slate-400 hover:text-white text-sm transition-colors">Privacy Policy</a>
-                    <a href="#" class="text-slate-400 hover:text-white text-sm transition-colors">Terms of Service</a>
-                    <a href="#" class="text-slate-400 hover:text-white text-sm transition-colors">Contact Us</a>
-                </div>
-            </div>
-        </div>
-    </footer>
+    @include('components.footer')
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             // Mobile menu functionality

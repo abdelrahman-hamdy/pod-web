@@ -120,6 +120,7 @@
         {{-- Messages Area --}}
         <div class="flex-1 overflow-y-auto bg-slate-50 messages-container app-scroll">
             <div class="messages p-6 space-y-4">
+                @if (! $id)
                 <div class="message-hint flex items-center justify-center h-full">
                     <div class="text-center">
                         <div class="inline-flex items-center justify-center w-16 h-16 bg-indigo-100 rounded-full mb-4">
@@ -129,6 +130,7 @@
                         <p class="text-slate-400 text-sm mt-2">Choose a conversation from the left sidebar</p>
                     </div>
                 </div>
+                @endif
             </div>
 
             {{-- Typing Indicator --}}

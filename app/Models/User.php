@@ -270,6 +270,14 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * Check if user can create internships.
+     */
+    public function canCreateInternships(): bool
+    {
+        return $this->isAdmin() || $this->isClient();
+    }
+
+    /**
      * Check if user can moderate content.
      */
     public function canModerateContent(): bool
@@ -356,4 +364,13 @@ class User extends Authenticatable implements MustVerifyEmail
      * Boot method removed - avatar colors are now set explicitly during registration
      * using AvatarColor::random()->value
      */
+    public function hackathonTeams()
+    {
+        return $this->hasMany(HackathonTeam::class);
+    }
+
+    public function newsletterSubscription()
+    {
+        return $this->hasOne(NewsletterSubscription::class);
+    }
 }

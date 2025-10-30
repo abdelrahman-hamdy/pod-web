@@ -37,11 +37,14 @@
                     <!-- Post Content -->
                     <div>
                         <label for="content" class="block text-sm font-medium text-gray-700 mb-2">What's on your mind?</label>
-                        <textarea id="content" name="content" rows="6" 
-                                  class="input-field" 
-                                  placeholder="Share your thoughts, insights, or ask a question to the community..." 
-                                  required></textarea>
-                        <p class="text-sm text-gray-500 mt-1">Be respectful and constructive in your posts</p>
+                        <div class="relative">
+                            <div id="hashtag-highlight" class="absolute inset-0 input-field border-transparent pointer-events-none overflow-hidden whitespace-pre-wrap break-words" aria-hidden="true"></div>
+                            <textarea id="content" name="content" rows="6" 
+                                class="input-field relative bg-transparent caret-slate-800" 
+                                placeholder="Share your thoughts, insights, or ask a question to the community..." 
+                                required style="color: transparent;"></textarea>
+                        </div>
+                        <p class="text-sm text-gray-500 mt-1">Be respectful and constructive in your posts. Use #hashtags to categorize your content.</p>
                     </div>
                     
                     <!-- Post Type -->
@@ -175,6 +178,31 @@
 </div>
 
 <script>
+// Hashtag highlighting with overlay
+const postContentTextarea = document.getElementById('content');
+const hashtagHighlight = document.getElementById('hashtag-highlight');
+
+function syncHighlight() {
+    if (!postContentTextarea || !hashtagHighlight) return;
+
+    const text = postContentTextarea.value;
+    const highlightedText = text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/(#\w+)/g, '<span style="color: #4f46e5; font-weight: 600;">$1</span>')
+        .replace(/\n/g, '<br>');
+    
+    hashtagHighlight.innerHTML = highlightedText + ' ';
+    hashtagHighlight.scrollTop = postContentTextarea.scrollTop;
+    hashtagHighlight.scrollLeft = postContentTextarea.scrollLeft;
+}
+
+if (postContentTextarea) {
+    postContentTextarea.addEventListener('input', syncHighlight);
+    postContentTextarea.addEventListener('scroll', syncHighlight);
+}
+
 // Show/hide poll options based on post type
 document.getElementById('type').addEventListener('change', function() {
     const pollOptions = document.getElementById('poll-options');
