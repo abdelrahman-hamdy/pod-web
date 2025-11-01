@@ -67,16 +67,6 @@
                 </a>
             </div>
         </div>
-
-        <!-- Help Text -->
-        <div class="mt-6 text-center">
-            <p class="text-sm text-slate-600">
-                Remember your password? 
-                <a href="{{ route('login') }}" class="font-medium text-indigo-600 hover:text-indigo-700 transition-colors">
-                    Sign in
-                </a>
-            </p>
-        </div>
     </div>
 </div>
 @endsection
