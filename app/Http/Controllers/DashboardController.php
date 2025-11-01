@@ -30,7 +30,8 @@ class DashboardController extends Controller
             });
 
         // Get upcoming events for the events section
-        $events = Event::where('start_date', '>=', now())
+        $events = Event::with('creator')
+            ->where('start_date', '>=', now())
             ->orderBy('start_date')
             ->take(3)
             ->get();
@@ -61,8 +62,8 @@ class DashboardController extends Controller
                 return $post;
             });
 
-        // Check if there are more posts
-        $hasMore = Post::published()->count() > ($offset + $limit);
+        // Check if there are more posts (we got $limit items, if exactly limit, there might be more)
+        $hasMore = $posts->count() === $limit;
 
         return response()->json([
             'posts' => $posts,
