@@ -37,5 +37,22 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        // In production, don't expose error details to users
+        if (! $this->environment('local')) {
+            $exceptions->dontReport([
+                \Illuminate\Auth\AuthenticationException::class,
+                \Illuminate\Auth\Access\AuthorizationException::class,
+                \Illuminate\Validation\ValidationException::class,
+            ]);
+        }
+
+        // Render friendly error pages
+        $exceptions->render(function (\Throwable $e, $request) {
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'message' => config('app.debug') ? $e->getMessage() : 'Server Error',
+                    'error' => config('app.debug') ? $e->getTraceAsString() : null,
+                ], 500);
+            }
+        });
     })->create();

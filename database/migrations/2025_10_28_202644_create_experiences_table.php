@@ -22,7 +22,7 @@ return new class extends Migration
             $table->boolean('is_current')->default(false);
             $table->text('description')->nullable();
             $table->timestamps();
-            
+
             $table->index('user_id');
         });
     }

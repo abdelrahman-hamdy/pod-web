@@ -436,30 +436,25 @@
             },
             
             filterByCategory(categoryId) {
-                console.log('🏷️ Category filter applied:', categoryId);
                 this.selectedCategory = categoryId;
                 this.applyFilters();
             },
             
             filterByDateRange(range) {
-                console.log('📅 Date range filter applied:', range);
                 this.selectedDateRange = range;
                 this.applyFilters();
             },
             
             filterByEventType(type) {
-                console.log('🎭 Event type filter applied:', type);
                 this.selectedEventType = type;
                 this.applyFilters();
             },
             
             searchEvents() {
-                console.log('🔍 Search filter applied:', this.searchQuery);
                 this.applyFilters();
             },
             
             filterBySpecificDate(date) {
-                console.log('📅 Specific date filter applied:', date);
                 this.selectedDateRange = null; // Clear date range filter
                 this.applyFilters();
             },
@@ -476,14 +471,6 @@
                 
                 const url = `{{ route('events.index') }}?${params.toString()}`;
                 
-                console.log('🔄 Applying filters - Re-fetching data from database:', {
-                    selectedCategory: this.selectedCategory,
-                    selectedDateRange: this.selectedDateRange,
-                    selectedEventType: this.selectedEventType,
-                    searchQuery: this.searchQuery,
-                    url: url
-                });
-                
                 fetch(url)
                     .then(response => response.text())
                     .then(html => {
@@ -493,8 +480,6 @@
                         // Update events container
                         const newEventsContainer = doc.querySelector('#events-container');
                         if (newEventsContainer) {
-                            const eventCount = newEventsContainer.children.length;
-                            console.log(`✅ Database returned ${eventCount} events matching filters`);
                             document.getElementById('events-container').innerHTML = newEventsContainer.innerHTML;
                         }
                         
@@ -527,7 +512,6 @@
                     })
                     .finally(() => {
                         this.loading = false;
-                        console.log('🎯 Filter application completed - All events re-fetched from database');
                     });
             }
         }
@@ -544,19 +528,14 @@
             }
             
             if (loadMoreBtn && loadMoreBtn.id === 'load-more-btn') {
-                console.log('Load more button clicked');
-                
                 // Prevent multiple clicks
                 if (loadMoreBtn.disabled) {
-                    console.log('Button already disabled, ignoring click');
                     return;
                 }
                 
                 const nextPageUrl = loadMoreBtn.getAttribute("data-next-page");
-                console.log('Next page URL:', nextPageUrl);
                 
                 if (!nextPageUrl) {
-                    console.log('No next page URL found');
                     return;
                 }
 
@@ -566,29 +545,18 @@
                 const loadMoreSpinner = loadMoreBtn.querySelector("#load-more-spinner");
                 if (loadMoreText) loadMoreText.classList.add("hidden");
                 if (loadMoreSpinner) loadMoreSpinner.classList.remove("hidden");
-                
-                console.log('Loading state activated');
 
                 // Fetch next page with current filters
                 const currentParams = new URLSearchParams(window.location.search);
                 const nextPageUrlWithFilters = nextPageUrl + (nextPageUrl.includes('?') ? '&' : '?') + currentParams.toString();
                 
-                console.log('Fetching URL:', nextPageUrlWithFilters);
-                
                 fetch(nextPageUrlWithFilters)
-                    .then(response => {
-                        console.log('Load more response status:', response.status);
-                        return response.text();
-                    })
+                    .then(response => response.text())
                     .then(html => {
-                        console.log('Load more HTML length:', html.length);
-                        
                         // Parse the response to extract events
                         const parser = new DOMParser();
                         const doc = parser.parseFromString(html, 'text/html');
                         const newEvents = doc.querySelectorAll('#events-container > div');
-                        
-                        console.log('Found', newEvents.length, 'new events to append');
                         
                         // Append new events to container
                         const container = document.getElementById("events-container");
@@ -598,15 +566,12 @@
 
                         // Update next page URL
                         const newNextPage = doc.querySelector('#load-more-btn')?.getAttribute("data-next-page");
-                        console.log('New next page URL:', newNextPage);
                         
                         if (newNextPage) {
                             loadMoreBtn.setAttribute("data-next-page", newNextPage);
-                            console.log('Updated next page URL');
                         } else {
                             // No more pages, hide the button
                             loadMoreBtn.parentElement.style.display = 'none';
-                            console.log('No more pages, hiding load more button');
                         }
                     })
                     .catch(error => {
@@ -618,7 +583,6 @@
                         loadMoreBtn.disabled = false;
                         if (loadMoreText) loadMoreText.classList.remove("hidden");
                         if (loadMoreSpinner) loadMoreSpinner.classList.add("hidden");
-                        console.log('Loading state deactivated');
                     });
             }
         });
@@ -626,7 +590,6 @@
 
     // Global functions for calendar interaction
     function filterByDate(date) {
-        console.log('📅 Calendar date clicked:', date);
         // Get the Alpine.js component instance
         const eventFiltersComponent = Alpine.$data(document.querySelector('[x-data="eventFilters()"]'));
         if (eventFiltersComponent) {
@@ -637,7 +600,6 @@
     }
 
     function clearDateFilter() {
-        console.log('🗑️ Clearing date filter');
         // Get the Alpine.js component instance
         const eventFiltersComponent = Alpine.$data(document.querySelector('[x-data="eventFilters()"]'));
         if (eventFiltersComponent) {
@@ -647,7 +609,6 @@
     }
 
     function clearAllFilters() {
-        console.log('🗑️ Clearing all filters');
         // Get the Alpine.js component instance
         const eventFiltersComponent = Alpine.$data(document.querySelector('[x-data="eventFilters()"]'));
         if (eventFiltersComponent) {

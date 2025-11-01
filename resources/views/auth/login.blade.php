@@ -59,7 +59,6 @@
                         <input id="remember" name="remember" type="checkbox" 
                                class="w-4 h-4 text-indigo-600 border-slate-300 rounded focus:ring-2 focus:ring-indigo-500">
                         <label for="remember" class="ml-2 flex items-center text-sm text-slate-700 cursor-pointer">
-                            <i class="ri-checkbox-line mr-1.5 text-indigo-600"></i>
                             Remember me
                         </label>
                     </div>

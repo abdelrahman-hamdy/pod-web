@@ -795,7 +795,6 @@
         }
 
         function initializeFallbackLightbox() {
-            console.log('Initializing fallback lightbox...');
             document.querySelectorAll('.post-image-trigger').forEach(trigger => {
                 trigger.addEventListener('click', function(e) {
                     e.preventDefault();
@@ -823,9 +822,7 @@
                     moreText: 'See all images',
                     autoplayVideos: false
                 });
-                console.log('GLightbox initialized successfully');
             } else {
-                console.error('GLightbox not available');
                 initializeFallbackLightbox();
             }
         });
