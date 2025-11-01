@@ -1,9 +1,9 @@
-@extends('layouts.app')
+@extends('layouts.guest')
 
 @section('title', '404 - Page Not Found - People Of Data')
 
 @section('content')
-<div class="min-h-screen flex items-center justify-center px-4 sm:px-6 lg:px-8">
+<div class="min-h-screen flex items-center justify-center bg-slate-50 px-4 sm:px-6 lg:px-8">
     <div class="max-w-md w-full text-center">
         <!-- 404 Number -->
         <div class="mb-8">

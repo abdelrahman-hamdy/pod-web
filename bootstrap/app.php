@@ -37,22 +37,12 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        // In production, don't expose error details to users
-        if (! $this->environment('local')) {
-            $exceptions->dontReport([
-                \Illuminate\Auth\AuthenticationException::class,
-                \Illuminate\Auth\Access\AuthorizationException::class,
-                \Illuminate\Validation\ValidationException::class,
-            ]);
+        if (! app()->environment('local')) {
+            $exceptions->render(function (\Symfony\Component\HttpKernel\Exception\NotFoundHttpException $e, $request) {
+                return response()->view('errors.404', [], 404);
+            });
+            $exceptions->render(function (\Throwable $e, $request) {
+                return response()->view('errors.500', [], 500);
+            });
         }
-
-        // Render friendly error pages
-        $exceptions->render(function (\Throwable $e, $request) {
-            if ($request->wantsJson()) {
-                return response()->json([
-                    'message' => config('app.debug') ? $e->getMessage() : 'Server Error',
-                    'error' => config('app.debug') ? $e->getTraceAsString() : null,
-                ], 500);
-            }
-        });
     })->create();
