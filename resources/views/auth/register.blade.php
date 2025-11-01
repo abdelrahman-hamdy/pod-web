@@ -96,18 +96,6 @@
                     </div>
                 </div>
 
-                <!-- Terms Agreement -->
-                <div class="flex items-start">
-                    <input id="terms" name="terms" type="checkbox" required
-                           class="mt-1 w-4 h-4 text-indigo-600 border-slate-300 rounded focus:ring-2 focus:ring-indigo-500">
-                    <label for="terms" class="ml-2 block text-sm text-slate-700">
-                        I agree to the 
-                        <a href="#" class="text-indigo-600 hover:text-indigo-500 transition-colors">Terms of Service</a> 
-                        and 
-                        <a href="#" class="text-indigo-600 hover:text-indigo-500 transition-colors">Privacy Policy</a>
-                    </label>
-                </div>
-
                 <!-- Submit Button -->
                 <div>
                     <button type="submit" class="w-full bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition-all font-medium shadow-md hover:shadow-lg">
