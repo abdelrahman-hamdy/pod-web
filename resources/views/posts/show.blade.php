@@ -13,7 +13,7 @@
     </div>
     
     <!-- Post -->
-    @include('components.post-card', ['post' => $post])
+    <x-post-card :post="$post" />
     
     <!-- Comments Section -->
     <div class="bg-white rounded-xl shadow-[0_8px_24px_rgba(0,0,0,0.04)] p-6 mt-6">

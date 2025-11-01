@@ -50,20 +50,9 @@
                         
                         <!-- Application Status -->
                         <div class="flex items-center space-x-3">
-                            @php
-                                $statusValue = $application->status->value;
-                                $statusLabel = $application->status->getLabel();
-                                $statusClass = match($statusValue) {
-                                    'pending' => 'bg-yellow-100 text-yellow-800',
-                                    'reviewed' => 'bg-blue-100 text-blue-800',
-                                    'accepted' => 'bg-green-100 text-green-800',
-                                    'rejected' => 'bg-red-100 text-red-800',
-                                    default => 'bg-gray-100 text-gray-800',
-                                };
-                            @endphp
-                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium {{ $statusClass }}">
-                                {{ $statusLabel }}
-                            </span>
+                            <x-status-badge 
+                                :status="$application->status->value"
+                                :label="$application->status->getLabel()" />
                             
                             <!-- Status Actions -->
                             <div class="flex items-center space-x-2">

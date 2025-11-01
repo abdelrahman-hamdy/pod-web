@@ -195,13 +195,10 @@
                                     @endif
                                     <p class="text-xs text-slate-500">Applied on {{ $application->created_at->format('M d, Y') }}</p>
                                 </div>
-                                <span class="px-3 py-1 rounded-full text-xs font-medium
-                                    @if($application->status === 'pending') bg-yellow-100 text-yellow-800
-                                    @elseif($application->status === 'reviewed') bg-blue-100 text-blue-800
-                                    @elseif($application->status === 'accepted') bg-green-100 text-green-800
-                                    @else bg-red-100 text-red-800 @endif">
-                                    {{ $application->status_display }}
-                                </span>
+                                <x-status-badge 
+                                    :status="$application->status"
+                                    :label="$application->status_display"
+                                    size="sm" />
                             </div>
                         </div>
                     @endforeach

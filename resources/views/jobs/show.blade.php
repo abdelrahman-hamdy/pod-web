@@ -180,20 +180,9 @@
                             <!-- Application Status -->
                             <div class="flex items-center justify-between">
                                 <span class="text-sm text-slate-600">Status:</span>
-                                @php
-                                    $statusValue = $userApplication->status->value;
-                                    $statusLabel = $userApplication->status->getLabel();
-                                    $statusClass = match($statusValue) {
-                                        'pending' => 'bg-yellow-100 text-yellow-800',
-                                        'reviewed' => 'bg-blue-100 text-blue-800',
-                                        'accepted' => 'bg-green-100 text-green-800',
-                                        'rejected' => 'bg-red-100 text-red-800',
-                                        default => 'bg-gray-100 text-gray-800',
-                                    };
-                                @endphp
-                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium {{ $statusClass }}">
-                                    {{ $statusLabel }}
-                                </span>
+                                <x-status-badge 
+                                    :status="$userApplication->status->value"
+                                    :label="$userApplication->status->getLabel()" />
                             </div>
                         </div>
                         

@@ -64,7 +64,7 @@
                 </h2>
                 <div class="space-y-4">
                     @foreach($posts as $post)
-                        @include('components.post-card', ['post' => $post])
+                        <x-post-card :post="$post" />
                     @endforeach
                 </div>
             </div>

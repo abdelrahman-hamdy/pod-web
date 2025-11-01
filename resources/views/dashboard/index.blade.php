@@ -58,7 +58,7 @@
         <!-- Feed Posts -->
         <div id="posts-container" class="space-y-6">
             @foreach($posts as $index => $post)
-                @include('components.post-card', ['post' => $post])
+                <x-post-card :post="$post" />
                 
                 @if($index == 1)
                     <!-- Events Section - Show after 2 posts -->
