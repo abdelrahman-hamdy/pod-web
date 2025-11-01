@@ -32,6 +32,8 @@ tags:
     description: User notification management
   - name: Search
     description: Global search functionality across different resources
+  - name: Chat/Messaging
+    description: Real-time messaging and chat functionality
 
 # ----------------------------------------------
 # Security Schemes
@@ -394,6 +396,112 @@ components:
         is_active:
           type: boolean
 
+    Hackathon:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        start_date:
+          type: string
+          format: date-time
+        end_date:
+          type: string
+          format: date-time
+        registration_deadline:
+          type: string
+          format: date-time
+          nullable: true
+        location:
+          type: string
+          nullable: true
+        format:
+          type: string
+          enum: [online, on-site, hybrid]
+        max_participants:
+          type: integer
+          nullable: true
+        max_team_size:
+          type: integer
+        min_team_size:
+          type: integer
+        skill_level:
+          type: string
+          enum: [beginner, intermediate, advanced, expert]
+          nullable: true
+        prizes:
+          type: string
+          nullable: true
+        rules:
+          type: string
+          nullable: true
+        resources:
+          type: string
+          nullable: true
+        banner_image:
+          type: string
+          format: uri
+          nullable: true
+        is_active:
+          type: boolean
+        is_registered:
+          type: boolean
+        can_edit:
+          type: boolean
+        category:
+          $ref: '#/components/schemas/Category'
+        creator:
+          $ref: '#/components/schemas/User'
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    Internship:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        company_name:
+          type: string
+        location:
+          type: string
+          nullable: true
+        type:
+          type: string
+        duration:
+          type: string
+        application_deadline:
+          type: string
+          format: date-time
+          nullable: true
+        start_date:
+          type: string
+          format: date-time
+          nullable: true
+        status:
+          type: string
+          enum: [open, closed]
+        has_applied:
+          type: boolean
+        category:
+          $ref: '#/components/schemas/Category'
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
     # --- Response Wrappers ---
     SuccessResponse:
       type: object
@@ -626,6 +734,219 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+  /auth/refresh:
+    post:
+      tags:
+        - Authentication
+      summary: Refresh authentication token
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Token refreshed successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          user:
+                            $ref: '#/components/schemas/User'
+                          token:
+                            type: string
+
+  /auth/forgot-password:
+    post:
+      tags:
+        - Authentication
+      summary: Send password reset email
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+              properties:
+                email:
+                  type: string
+                  format: email
+      responses:
+        '200':
+          description: Reset email sent if user exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /auth/reset-password:
+    post:
+      tags:
+        - Authentication
+      summary: Reset password with token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+                - password_confirmation
+                - token
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  format: password
+                password_confirmation:
+                  type: string
+                  format: password
+                token:
+                  type: string
+      responses:
+        '200':
+          description: Password reset successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /auth/verify-email/{id}/{hash}:
+    get:
+      tags:
+        - Authentication
+      summary: Verify email address
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: hash
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Email verified successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /auth/resend-verification:
+    post:
+      tags:
+        - Authentication
+      summary: Resend email verification
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Verification email sent
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  # --- Users ---
+  /users:
+    get:
+      tags:
+        - Users & Profiles
+      summary: List all users
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: List of users
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PaginatedResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/User'
+
+  /users/search:
+    get:
+      tags:
+        - Users & Profiles
+      summary: Search users
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Search results for users
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          type: object
+
+  /users/{userId}:
+    get:
+      tags:
+        - Users & Profiles
+      summary: Get a specific user
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: User details
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/User'
+
   # --- Posts ---
   /posts:
     get:
@@ -823,6 +1144,58 @@ paths:
                           likes_count:
                             type: integer
 
+  /posts/{postId}/share:
+    post:
+      tags:
+        - Posts
+      summary: Share a post
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                platform:
+                  type: string
+      responses:
+        '200':
+          description: Post shared successfully
+
+  /posts/{postId}/vote:
+    post:
+      tags:
+        - Posts
+      summary: Vote on a poll
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                option_index:
+                  type: integer
+      responses:
+        '200':
+          description: Vote recorded
+
   # --- Comments ---
   /posts/{postId}/comments:
     get:
@@ -886,6 +1259,47 @@ paths:
                       data:
                         $ref: '#/components/schemas/Comment'
 
+  /comments/{commentId}:
+    put:
+      tags:
+        - Comments
+      summary: Update a comment
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: commentId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                content:
+                  type: string
+      responses:
+        '200':
+          description: Comment updated
+    delete:
+      tags:
+        - Comments
+      summary: Delete a comment
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: commentId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Comment deleted
+
   # --- Events ---
   /events:
     get:
@@ -928,6 +1342,60 @@ paths:
                       data:
                         $ref: '#/components/schemas/Event'
 
+  /events/{eventId}:
+    get:
+      tags:
+        - Events
+      summary: Get a specific event
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Event details
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Event'
+    put:
+      tags:
+        - Events
+      summary: Update an event
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Event updated
+    delete:
+      tags:
+        - Events
+      summary: Delete an event
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Event deleted
+
   /events/{eventId}/register:
     post:
       tags:
@@ -946,6 +1414,55 @@ paths:
           description: Successfully registered
         '400':
           description: Bad request (e.g., registration closed)
+    delete:
+      tags:
+        - Events
+      summary: Cancel event registration
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Registration cancelled
+
+  /events/{eventId}/check-in:
+    post:
+      tags:
+        - Events
+      summary: Check in to an event
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successfully checked in
+
+  /events/{eventId}/registrations:
+    get:
+      tags:
+        - Events
+      summary: Get event registrations (Admin only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: List of registrations
 
   # --- Jobs ---
   /jobs:
@@ -967,6 +1484,94 @@ paths:
                         type: array
                         items:
                           $ref: '#/components/schemas/JobListing'
+    post:
+      tags:
+        - Job Listings
+      summary: Create a new job listing
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                description:
+                  type: string
+                company_name:
+                  type: string
+                location_type:
+                  type: string
+                  enum: [remote, on-site, hybrid]
+      responses:
+        '201':
+          description: Job created
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/JobListing'
+
+  /jobs/{jobId}:
+    get:
+      tags:
+        - Job Listings
+      summary: Get a specific job
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Job details
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/JobListing'
+    put:
+      tags:
+        - Job Listings
+      summary: Update a job
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Job updated
+    delete:
+      tags:
+        - Job Listings
+      summary: Delete a job
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Job deleted
 
   /jobs/{jobId}/apply:
     post:
@@ -987,6 +1592,151 @@ paths:
       responses:
         '200':
           description: Application successful
+
+  /jobs/{jobId}/close:
+    patch:
+      tags:
+        - Job Listings
+      summary: Close a job listing
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Job closed
+
+  /jobs/{jobId}/reopen:
+    patch:
+      tags:
+        - Job Listings
+      summary: Reopen a closed job
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Job reopened
+
+  /jobs/{jobId}/archive:
+    patch:
+      tags:
+        - Job Listings
+      summary: Archive a job listing
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Job archived
+
+  /jobs/{jobId}/applications:
+    get:
+      tags:
+        - Job Listings
+      summary: Get applications for a job (Admin only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: List of applications
+
+  /jobs/applications/{applicationId}/review:
+    patch:
+      tags:
+        - Job Listings
+      summary: Review an application (Admin only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: applicationId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Application reviewed
+
+  /jobs/applications/{applicationId}/accept:
+    patch:
+      tags:
+        - Job Listings
+      summary: Accept an application (Admin only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: applicationId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Application accepted
+
+  /jobs/applications/{applicationId}/reject:
+    patch:
+      tags:
+        - Job Listings
+      summary: Reject an application (Admin only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: applicationId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Application rejected
+
+  /jobs/applications/{applicationId}/notes:
+    patch:
+      tags:
+        - Job Listings
+      summary: Update notes on an application (Admin only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: applicationId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                notes:
+                  type: string
+      responses:
+        '200':
+          description: Notes updated
 
   # --- Notifications ---
   /notifications:
@@ -1010,6 +1760,15 @@ paths:
                         type: array
                         items:
                           $ref: '#/components/schemas/Notification'
+    delete:
+      tags:
+        - Notifications
+      summary: Clear all notifications
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: All notifications cleared
 
   /notifications/{notificationId}/read:
     patch:
@@ -1028,6 +1787,1297 @@ paths:
       responses:
         '200':
           description: Notification marked as read
+
+  /notifications/unread-count:
+    get:
+      tags:
+        - Notifications
+      summary: Get unread notifications count
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Unread count retrieved
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          count:
+                            type: integer
+
+  /notifications/read-all:
+    patch:
+      tags:
+        - Notifications
+      summary: Mark all notifications as read
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: All notifications marked as read
+
+  /notifications/{notificationId}:
+    delete:
+      tags:
+        - Notifications
+      summary: Delete a notification
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: notificationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Notification deleted
+
+  /notifications/preferences:
+    post:
+      tags:
+        - Notifications
+      summary: Update notification preferences
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                preferences:
+                  type: object
+      responses:
+        '200':
+          description: Preferences updated
+
+  /notifications/fcm-token:
+    post:
+      tags:
+        - Notifications
+      summary: Register FCM token for push notifications
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                token:
+                  type: string
+      responses:
+        '200':
+          description: Token registered
+    delete:
+      tags:
+        - Notifications
+      summary: Remove FCM token
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Token removed
+
+# --- Search ---
+  /search:
+    get:
+      tags:
+        - Search
+      summary: Global search across all resources
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          posts:
+                            type: array
+                          events:
+                            type: array
+                          jobs:
+                            type: array
+                          users:
+                            type: array
+
+  /search/posts:
+    get:
+      tags:
+        - Search
+      summary: Search posts only
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Search results for posts
+
+  /search/events:
+    get:
+      tags:
+        - Search
+      summary: Search events only
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Search results for events
+
+  /search/jobs:
+    get:
+      tags:
+        - Search
+      summary: Search jobs only
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Search results for jobs
+
+  /search/hackathons:
+    get:
+      tags:
+        - Search
+      summary: Search hackathons only
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Search results for hackathons
+
+  /search/users:
+    get:
+      tags:
+        - Search
+      summary: Search users only
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Search results for users
+
+# --- Profile Management ---
+  /profile:
+    get:
+      tags:
+        - Users & Profiles
+      summary: Get authenticated user's profile
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: User profile
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/User'
+    
+    put:
+      tags:
+        - Users & Profiles
+      summary: Update authenticated user's profile
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                first_name:
+                  type: string
+                last_name:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                bio:
+                  type: string
+                phone:
+                  type: string
+                city:
+                  type: string
+                country:
+                  type: string
+                gender:
+                  type: string
+                  enum: [male, female, other, prefer_not_to_say]
+                skills:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '200':
+          description: Profile updated
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/User'
+
+  /profile/progress:
+    get:
+      tags:
+        - Users & Profiles
+      summary: Get profile completion progress
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Profile progress retrieved
+
+  /profile/complete:
+    post:
+      tags:
+        - Users & Profiles
+      summary: Mark profile as complete
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Profile marked as complete
+
+  /profile/avatar:
+    post:
+      tags:
+        - Users & Profiles
+      summary: Upload profile avatar
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                avatar:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Avatar uploaded
+
+  /profile/experiences/{experienceId}:
+    get:
+      tags:
+        - Users & Profiles
+      summary: Get a specific experience
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: experienceId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Experience details
+    put:
+      tags:
+        - Users & Profiles
+      summary: Update an experience
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: experienceId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Experience updated
+    delete:
+      tags:
+        - Users & Profiles
+      summary: Delete an experience
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: experienceId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Experience deleted
+
+  /profile/experiences:
+    post:
+      tags:
+        - Users & Profiles
+      summary: Create a new experience entry
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                company:
+                  type: string
+                description:
+                  type: string
+                start_date:
+                  type: string
+                  format: date
+                end_date:
+                  type: string
+                  format: date
+                  nullable: true
+                current:
+                  type: boolean
+      responses:
+        '201':
+          description: Experience created
+
+  /profile/portfolios/{portfolioId}:
+    get:
+      tags:
+        - Users & Profiles
+      summary: Get a specific portfolio
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: portfolioId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Portfolio details
+    put:
+      tags:
+        - Users & Profiles
+      summary: Update a portfolio
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: portfolioId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Portfolio updated
+    delete:
+      tags:
+        - Users & Profiles
+      summary: Delete a portfolio
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: portfolioId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Portfolio deleted
+
+  /profile/portfolios:
+    post:
+      tags:
+        - Users & Profiles
+      summary: Create a new portfolio entry
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                description:
+                  type: string
+                url:
+                  type: string
+                  format: uri
+                image:
+                  type: string
+                  format: uri
+                  nullable: true
+      responses:
+        '201':
+          description: Portfolio created
+
+# --- Additional Job Endpoints ---
+  /jobs/my-applications:
+    get:
+      tags:
+        - Job Listings
+      summary: Get my job applications
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of user's applications
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PaginatedResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          type: object
+
+  # --- Hackathons ---
+  /hackathons:
+    get:
+      tags:
+        - Hackathons
+      summary: Get a list of hackathons
+      parameters:
+        - name: category
+          in: query
+          schema:
+            type: integer
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [upcoming, ongoing, past, registration_open]
+        - name: skill_level
+          in: query
+          schema:
+            type: string
+        - name: prize_range
+          in: query
+          schema:
+            type: string
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: A paginated list of hackathons
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PaginatedResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Hackathon'
+    post:
+      tags:
+        - Hackathons
+      summary: Create a new hackathon
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                description:
+                  type: string
+                start_date:
+                  type: string
+                  format: date-time
+                end_date:
+                  type: string
+                  format: date-time
+      responses:
+        '201':
+          description: Hackathon created
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Hackathon'
+
+  /hackathons/{hackathonId}:
+    get:
+      tags:
+        - Hackathons
+      summary: Get a specific hackathon
+      parameters:
+        - name: hackathonId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Hackathon details
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Hackathon'
+    put:
+      tags:
+        - Hackathons
+      summary: Update a hackathon
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: hackathonId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Hackathon updated
+    delete:
+      tags:
+        - Hackathons
+      summary: Delete a hackathon
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: hackathonId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Hackathon deleted
+
+  /hackathons/{hackathonId}/register:
+    post:
+      tags:
+        - Hackathons
+      summary: Register for a hackathon
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: hackathonId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successfully registered
+
+  /hackathons/{hackathonId}/teams:
+    get:
+      tags:
+        - Hackathons
+      summary: Get teams for a hackathon
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: hackathonId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: List of teams
+
+  /hackathons/{hackathonId}/join-team:
+    post:
+      tags:
+        - Hackathons
+      summary: Join a team
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: hackathonId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successfully joined team
+
+  /hackathons/{hackathonId}/leave-team:
+    delete:
+      tags:
+        - Hackathons
+      summary: Leave a team
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: hackathonId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successfully left team
+
+  /hackathons/teams:
+    get:
+      tags:
+        - Hackathons
+      summary: Get my hackathon teams
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of teams
+
+    post:
+      tags:
+        - Hackathons
+      summary: Create a new hackathon team
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                hackathon_id:
+                  type: integer
+                name:
+                  type: string
+      responses:
+        '201':
+          description: Team created
+
+  /hackathons/teams/{teamId}:
+    put:
+      tags:
+        - Hackathons
+      summary: Update a team
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: teamId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Team updated
+    delete:
+      tags:
+        - Hackathons
+      summary: Delete a team
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: teamId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Team deleted
+
+  /hackathons/teams/{teamId}/invite:
+    post:
+      tags:
+        - Hackathons
+      summary: Invite a member to team
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: teamId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user_id:
+                  type: integer
+      responses:
+        '200':
+          description: Invitation sent
+
+  /hackathons/teams/{teamId}/join-request:
+    post:
+      tags:
+        - Hackathons
+      summary: Request to join a team
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: teamId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Join request sent
+
+  /hackathons/invitations/{invitationId}/accept:
+    post:
+      tags:
+        - Hackathons
+      summary: Accept an invitation
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: invitationId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Invitation accepted
+
+  /hackathons/invitations/{invitationId}/reject:
+    post:
+      tags:
+        - Hackathons
+      summary: Reject an invitation
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: invitationId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Invitation rejected
+
+  /hackathons/join-requests/{requestId}/accept:
+    post:
+      tags:
+        - Hackathons
+      summary: Accept a join request
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: requestId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Join request accepted
+
+  /hackathons/join-requests/{requestId}/reject:
+    post:
+      tags:
+        - Hackathons
+      summary: Reject a join request
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: requestId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Join request rejected
+
+# --- Internships ---
+  /internships:
+    get:
+      tags:
+        - Internships
+      summary: Get a list of internships
+      parameters:
+        - name: category
+          in: query
+          schema:
+            type: integer
+        - name: type
+          in: query
+          schema:
+            type: string
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: A paginated list of internships
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PaginatedResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Internship'
+
+  /internships/{internshipId}:
+    get:
+      tags:
+        - Internships
+      summary: Get a specific internship
+      parameters:
+        - name: internshipId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Internship details
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Internship'
+
+  /internships/my-applications:
+    get:
+      tags:
+        - Internships
+      summary: Get my internship applications
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of applications
+
+  /internships/apply:
+    post:
+      tags:
+        - Internships
+      summary: Apply for an internship
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                internship_id:
+                  type: integer
+                cover_letter:
+                  type: string
+                resume:
+                  type: string
+                  format: binary
+                university:
+                  type: string
+                major:
+                  type: string
+      responses:
+        '201':
+          description: Application submitted
+
+# --- Chat/Messaging Endpoints ---
+  /chat/api/chat/auth:
+    post:
+      tags:
+        - Chat/Messaging
+      summary: Authenticate for Pusher private channels
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                socket_id:
+                  type: string
+                channel_name:
+                  type: string
+      responses:
+        '200':
+          description: Authentication successful
+
+  /chat/api/idInfo:
+    post:
+      tags:
+        - Chat/Messaging
+      summary: Fetch info for specific user/group
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                fetch:
+                  type: string
+      responses:
+        '200':
+          description: User/group info retrieved
+
+  /chat/api/sendMessage:
+    post:
+      tags:
+        - Chat/Messaging
+      summary: Send a message
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: integer
+                type:
+                  type: string
+                message:
+                  type: string
+                tempId:
+                  type: string
+      responses:
+        '200':
+          description: Message sent
+
+  /chat/api/fetchMessages:
+    post:
+      tags:
+        - Chat/Messaging
+      summary: Fetch messages
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: integer
+                type:
+                  type: string
+                page:
+                  type: integer
+      responses:
+        '200':
+          description: Messages retrieved
+
+  /chat/api/download/{fileName}:
+    get:
+      tags:
+        - Chat/Messaging
+      summary: Download an attachment
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: fileName
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: File downloaded
+
+  /chat/api/makeSeen:
+    post:
+      tags:
+        - Chat/Messaging
+      summary: Mark messages as seen
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: integer
+      responses:
+        '200':
+          description: Messages marked as seen
+
+  /chat/api/getContacts:
+    get:
+      tags:
+        - Chat/Messaging
+      summary: Get all contacts
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of contacts
+
+  /chat/api/star:
+    post:
+      tags:
+        - Chat/Messaging
+      summary: Star/unstar a conversation
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                star:
+                  type: integer
+      responses:
+        '200':
+          description: Conversation starred/unstarred
+
+  /chat/api/favorites:
+    post:
+      tags:
+        - Chat/Messaging
+      summary: Get starred conversations
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of favorites
+
+  /chat/api/search:
+    get:
+      tags:
+        - Chat/Messaging
+      summary: Search in messages
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Search results
+
+  /chat/api/shared:
+    post:
+      tags:
+        - Chat/Messaging
+      summary: Get shared photos
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: integer
+      responses:
+        '200':
+          description: Shared photos retrieved
+
+  /chat/api/deleteConversation:
+    post:
+      tags:
+        - Chat/Messaging
+      summary: Delete a conversation
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: integer
+      responses:
+        '200':
+          description: Conversation deleted
+
+  /chat/api/updateSettings:
+    post:
+      tags:
+        - Chat/Messaging
+      summary: Update chat settings
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                key:
+                  type: string
+                value:
+                  type: string
+      responses:
+        '200':
+          description: Settings updated
+
+  /chat/api/setActiveStatus:
+    post:
+      tags:
+        - Chat/Messaging
+      summary: Set user active status
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: integer
+      responses:
+        '200':
+          description: Status updated
+
+  /chat/api/unread-count:
+    get:
+      tags:
+        - Chat/Messaging
+      summary: Get unread conversations count
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Unread count retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: integer
 
 # --- Security Requirement ---
 security:

@@ -37,12 +37,5 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        if (! app()->environment('local')) {
-            $exceptions->render(function (\Symfony\Component\HttpKernel\Exception\NotFoundHttpException $e, $request) {
-                return response()->view('errors.404', [], 404);
-            });
-            $exceptions->render(function (\Throwable $e, $request) {
-                return response()->view('errors.500', [], 500);
-            });
-        }
+        //
     })->create();
