@@ -12,13 +12,6 @@
             </h1>
         </div>
 
-        <!-- Icon -->
-        <div class="mb-6">
-            <div class="mx-auto w-32 h-32 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-full flex items-center justify-center">
-                <i class="ri-search-line text-6xl text-indigo-600"></i>
-            </div>
-        </div>
-
         <!-- Message -->
         <div class="mb-8">
             <h2 class="text-3xl font-bold text-slate-800 mb-4">

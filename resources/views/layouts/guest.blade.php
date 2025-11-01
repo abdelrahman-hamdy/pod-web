@@ -71,18 +71,21 @@
                     </div>
 
                     <!-- Auth Links -->
-                    <div class="flex items-center space-x-4">
+                    <div class="flex items-center space-x-3">
                         @if (Route::has('login'))
                             @auth
-                                <a href="{{ route('home') }}" class="btn-primary">
+                                <a href="{{ route('home') }}" class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium">
+                                    <i class="ri-dashboard-line mr-2"></i>
                                     Dashboard
                                 </a>
                             @else
-                                <a href="{{ route('login') }}" class="text-gray-600 hover:text-gray-900 transition-colors">
+                                <a href="{{ route('login') }}" class="inline-flex items-center px-4 py-2 text-indigo-600 hover:text-indigo-700 transition-colors font-medium">
+                                    <i class="ri-login-box-line mr-2"></i>
                                     Log in
                                 </a>
                                 @if (Route::has('register'))
-                                    <a href="{{ route('register') }}" class="btn-primary">
+                                    <a href="{{ route('register') }}" class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium">
+                                        <i class="ri-user-add-line mr-2"></i>
                                         Sign Up
                                     </a>
                                 @endif
@@ -128,11 +131,6 @@
             <div class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
                 <div class="text-center text-gray-500">
                     <p>&copy; {{ date('Y') }} People Of Data. All rights reserved.</p>
-                    <div class="mt-2 space-x-4">
-                        <a href="#" class="hover:text-gray-700 transition-colors">Privacy Policy</a>
-                        <a href="#" class="hover:text-gray-700 transition-colors">Terms of Service</a>
-                        <a href="#" class="hover:text-gray-700 transition-colors">Contact</a>
-                    </div>
                 </div>
             </div>
         </footer>
