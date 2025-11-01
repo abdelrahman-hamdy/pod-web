@@ -1,0 +1,9 @@
+# Protect storage directories
+<FilesMatch "^\.">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+Order Deny,Allow
+Deny from all
+
