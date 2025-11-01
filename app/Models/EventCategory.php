@@ -20,6 +20,27 @@ class EventCategory extends Model
         'is_active' => 'boolean',
     ];
 
+    /**
+     * Boot the model.
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        // Clear cache when event categories are modified
+        static::created(function () {
+            cache()->forget('event_categories_active');
+        });
+
+        static::updated(function () {
+            cache()->forget('event_categories_active');
+        });
+
+        static::deleted(function () {
+            cache()->forget('event_categories_active');
+        });
+    }
+
     public function events(): HasMany
     {
         return $this->hasMany(Event::class, 'category_id');
@@ -28,5 +49,17 @@ class EventCategory extends Model
     public function getColorAttribute($value)
     {
         return $value ?: '#3B82F6';
+    }
+
+    /**
+     * Get all active event categories (cached).
+     */
+    public static function getCachedActive(): \Illuminate\Support\Collection
+    {
+        return cache()->remember('event_categories_active', 3600, function () {
+            return static::where('is_active', true)
+                ->orderBy('name')
+                ->get();
+        });
     }
 }

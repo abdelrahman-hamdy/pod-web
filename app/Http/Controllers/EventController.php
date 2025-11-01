@@ -63,7 +63,7 @@ class EventController extends Controller
 
         $events = $query->paginate(12);
 
-        $categories = \App\Models\EventCategory::where('is_active', true)->orderBy('name')->get();
+        $categories = \App\Models\EventCategory::getCachedActive();
 
         // Get user's upcoming event registrations for the widget
         $userRegistrations = collect();
@@ -90,7 +90,7 @@ class EventController extends Controller
     {
         $this->authorize('create', Event::class);
 
-        $categories = \App\Models\EventCategory::where('is_active', true)->orderBy('name')->get();
+        $categories = \App\Models\EventCategory::getCachedActive();
         $isEdit = false;
         $event = null;
 
@@ -199,7 +199,7 @@ class EventController extends Controller
         $this->authorize('update', $event);
 
         $event->load('agendaItems');
-        $categories = \App\Models\EventCategory::where('is_active', true)->orderBy('name')->get();
+        $categories = \App\Models\EventCategory::getCachedActive();
         $isEdit = true;
 
         return view('events.form', compact('event', 'categories', 'isEdit'));

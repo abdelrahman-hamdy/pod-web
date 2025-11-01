@@ -44,6 +44,22 @@ class Category extends Model
                 $category->slug = Str::slug($category->name);
             }
         });
+
+        // Clear cache when categories are modified
+        static::created(function () {
+            cache()->forget('categories_active');
+            cache()->forget('categories_active_ordered');
+        });
+
+        static::updated(function () {
+            cache()->forget('categories_active');
+            cache()->forget('categories_active_ordered');
+        });
+
+        static::deleted(function () {
+            cache()->forget('categories_active');
+            cache()->forget('categories_active_ordered');
+        });
     }
 
     /**
@@ -100,6 +116,31 @@ class Category extends Model
     public function getUrlAttribute(): string
     {
         return route('jobs.category', $this->slug);
+    }
+
+    /**
+     * Get all active categories (cached).
+     */
+    public static function getCachedActive(): \Illuminate\Support\Collection
+    {
+        return cache()->remember('categories_active', 3600, function () {
+            return static::where('is_active', true)
+                ->orderBy('name')
+                ->get();
+        });
+    }
+
+    /**
+     * Get all active ordered categories (cached).
+     */
+    public static function getCachedActiveOrdered(): \Illuminate\Support\Collection
+    {
+        return cache()->remember('categories_active_ordered', 3600, function () {
+            return static::where('is_active', true)
+                ->orderBy('sort_order')
+                ->orderBy('name')
+                ->get();
+        });
     }
 
     /**

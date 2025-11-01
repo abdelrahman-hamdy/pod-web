@@ -96,7 +96,7 @@ class JobListingController extends Controller
 
         $jobs = $query->paginate(12);
 
-        $categories = Category::where('is_active', true)->orderBy('name')->get();
+        $categories = Category::getCachedActive();
         $experienceLevels = ExperienceLevel::options();
         $locationTypes = LocationType::options();
 
@@ -120,7 +120,7 @@ class JobListingController extends Controller
     {
         $this->authorize('create', JobListing::class);
 
-        $categories = Category::where('is_active', true)->get();
+        $categories = Category::getCachedActive();
         $experienceLevels = ExperienceLevel::options();
         $locationTypes = LocationType::options();
 
@@ -188,7 +188,7 @@ class JobListingController extends Controller
     {
         $this->authorize('update', $job);
 
-        $categories = Category::where('is_active', true)->get();
+        $categories = Category::getCachedActive();
         $experienceLevels = ExperienceLevel::options();
         $locationTypes = LocationType::options();
 
