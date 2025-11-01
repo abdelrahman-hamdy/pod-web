@@ -282,9 +282,6 @@ class MessagesController extends Controller
      */
     public function favorite(Request $request)
     {
-        \Log::info('Custom MessagesController favorite method called');
-        \Log::info('Request data:', $request->all());
-
         $userId = $request['user_id'];
         // check action [star/unstar]
         $favoriteStatus = Chatify::inFavorite($userId) ? 0 : 1;
@@ -302,7 +299,6 @@ class MessagesController extends Controller
             );
         } catch (\Exception $e) {
             // Silent fail if Pusher/Reverb is not available
-            \Log::info('Favorite broadcast failed: '.$e->getMessage());
         }
 
         // send the response

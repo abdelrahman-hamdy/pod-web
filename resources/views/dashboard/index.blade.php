@@ -466,12 +466,6 @@
             // Add required fields
             formData.append('type', 'text');
             formData.append('is_published', '1');
-            
-            // Debug: Log form data to see what's being sent
-            console.log('Form data being sent:');
-            for (let [key, value] of formData.entries()) {
-                console.log(key, value);
-            }
 
             try {
                 const response = await fetch('{{ route("posts.store") }}', {
