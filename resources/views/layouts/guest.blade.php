@@ -142,8 +142,8 @@
     <!-- Back to Top Button -->
     <div id="back-to-top" class="fixed bottom-8 right-8 z-50 opacity-0 pointer-events-none transition-all duration-300 ease-in-out transform">
         <button onclick="window.scrollTo({top: 0, behavior: 'smooth'})" 
-                class="bg-indigo-600 text-white p-4 rounded-full shadow-lg hover:bg-indigo-700 transition-colors duration-200 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
-            <i class="ri-arrow-up-line text-xl"></i>
+                class="bg-white text-slate-700 p-2 rounded-full shadow-lg hover:bg-slate-50 transition-colors duration-200 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+            <i class="ri-arrow-up-line text-lg"></i>
         </button>
     </div>
     
