@@ -29,11 +29,11 @@ Route::prefix('v1')->group(function () {
 
     // Public Routes (No Authentication Required)
     Route::group(['middleware' => ['throttle:20,1']], function () {
-        // Authentication
-        Route::post('/auth/register', [AuthController::class, 'register']);
-        Route::post('/auth/login', [AuthController::class, 'login']);
-        Route::post('/auth/forgot-password', [AuthController::class, 'forgotPassword']);
-        Route::post('/auth/reset-password', [AuthController::class, 'resetPassword']);
+        // Authentication - More restrictive rate limiting
+        Route::post('/auth/register', [AuthController::class, 'register'])->middleware('throttle:5,1');
+        Route::post('/auth/login', [AuthController::class, 'login'])->middleware('throttle:5,1');
+        Route::post('/auth/forgot-password', [AuthController::class, 'forgotPassword'])->middleware('throttle:3,1');
+        Route::post('/auth/reset-password', [AuthController::class, 'resetPassword'])->middleware('throttle:3,1');
 
         // Public Resources (Limited)
         Route::get('/posts', [PostController::class, 'index']);

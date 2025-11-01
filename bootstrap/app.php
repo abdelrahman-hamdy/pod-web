@@ -26,6 +26,11 @@ return Application::configure(basePath: dirname(__DIR__))
             \App\Http\Middleware\EnsureProfileCompleted::class,
         ]);
 
+        // Apply security headers to all web routes
+        $middleware->web(append: [
+            \App\Http\Middleware\SecurityHeadersMiddleware::class,
+        ]);
+
         // Don't encrypt sidebar state cookie (set by JavaScript)
         $middleware->encryptCookies(except: [
             'sidebar_collapsed',
