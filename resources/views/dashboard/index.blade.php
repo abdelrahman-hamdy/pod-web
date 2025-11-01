@@ -60,7 +60,7 @@
             @foreach($posts as $index => $post)
                 <x-post-card :post="$post" />
                 
-                @if($index == 1)
+                @if($index == 1 && $events->count() > 0)
                     <!-- Events Section - Show after 2 posts -->
                     <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-4 lg:p-6">
                         <div class="flex items-center justify-between mb-4 lg:mb-6">
