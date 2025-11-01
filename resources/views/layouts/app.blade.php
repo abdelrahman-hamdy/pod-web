@@ -832,6 +832,28 @@
     </script>
     
     @stack('scripts')
+    
+    <!-- Back to Top Button -->
+    <div id="back-to-top" class="fixed bottom-8 right-8 z-50 opacity-0 pointer-events-none transition-all duration-300 ease-in-out transform">
+        <button onclick="window.scrollTo({top: 0, behavior: 'smooth'})" 
+                class="bg-indigo-600 text-white p-4 rounded-full shadow-lg hover:bg-indigo-700 transition-colors duration-200 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+            <i class="ri-arrow-up-line text-xl"></i>
+        </button>
+    </div>
+    
+    <script>
+        // Show/hide back to top button based on scroll position
+        window.addEventListener('scroll', function() {
+            const backToTopButton = document.getElementById('back-to-top');
+            if (window.scrollY > 400) {
+                backToTopButton.classList.remove('opacity-0', 'pointer-events-none');
+                backToTopButton.classList.add('opacity-100');
+            } else {
+                backToTopButton.classList.add('opacity-0', 'pointer-events-none');
+                backToTopButton.classList.remove('opacity-100');
+            }
+        });
+    </script>
 </body>
 
 </html>
