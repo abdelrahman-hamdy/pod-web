@@ -2,17 +2,37 @@
 
 ## Prerequisites
 - Hostinger account with a hosting plan
-- SSH access enabled
-- Domain configured
+- SSH access enabled (recommended)
 - PHP 8.4+ support
 - Database credentials
+- **Domain OR temporary subdomain** (Hostinger provides a free temporary URL)
+
+---
+
+## 🆓 Using Temporary Subdomain for Testing
+
+**Don't have a custom domain yet?** No problem! Hostinger provides a temporary subdomain for testing.
+
+### Get Your Temporary Domain:
+1. Log in to Hostinger Control Panel
+2. Go to **Domains** → Your hosting account
+3. You'll see a temporary URL like: `yourusername.hostingersite.com`
+4. Use this URL for initial testing and development
+
+### Configure for Temporary Domain:
+In your `.env` file:
+```env
+APP_URL=https://yourusername.hostingersite.com
+```
+
+**Note:** You can later switch to your custom domain when ready - it's a simple `.env` change!
 
 ---
 
 ## Step 1: Access Hostinger Control Panel
 
 1. Log in to [Hostinger Control Panel](https://hpanel.hostinger.com)
-2. Select your domain
+2. Select your domain **OR temporary subdomain**
 3. Open **File Manager** or connect via **FTP/SSH**
 
 ---

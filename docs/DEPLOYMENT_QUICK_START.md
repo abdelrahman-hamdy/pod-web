@@ -6,6 +6,17 @@
 - [ ] Build assets: `npm run build`
 - [ ] Export database: `mysqldump -u user -p database > backup.sql`
 - [ ] Update `.env` for production
+- [ ] **Get your Hostinger temporary URL** (or domain)
+
+---
+
+## 🆓 Using Temporary Subdomain
+
+**No custom domain?** Hostinger provides a free temporary URL:
+- Log in to Hostinger Panel
+- Find your temporary subdomain: `yourusername.hostingersite.com`
+- Use this for testing!
+- You can switch to a custom domain later
 
 ---
 
@@ -13,9 +24,9 @@
 
 ### 1. Upload Files
 ```bash
-# Via SSH
-ssh user@yourdomain.com
-cd ~/domains/yourdomain.com/public_html
+# Via SSH (use your temporary URL or custom domain)
+ssh user@your-username.hostingersite.com
+cd ~/domains/your-username.hostingersite.com/public_html
 git clone https://github.com/yourusername/pod-web.git .
 ```
 
