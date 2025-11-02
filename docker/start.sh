@@ -3,6 +3,9 @@
 # Exit immediately if a command exits with a non-zero status.
 set -e
 
+# Wait for the database to be ready
+sleep 5
+
 # Run database migrations
 php artisan migrate --force
 
