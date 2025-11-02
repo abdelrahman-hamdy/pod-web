@@ -57,7 +57,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/auth/me', [AuthController::class, 'me']);
         Route::get('/auth/verify-email/{id}/{hash}', [AuthController::class, 'verifyEmail'])
             ->middleware(['signed'])
-            ->name('verification.verify');
+            ->name('api.verification.verify');
         Route::post('/auth/resend-verification', [AuthController::class, 'resendVerification']);
 
         // User Management
