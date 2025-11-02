@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Socialite\Facades\Socialite;
 use SocialiteProviders\LinkedIn\Provider;
@@ -30,6 +31,16 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Disable schema dumping in production
+        if ($this->app->isProduction()) {
+            Schema::defaultStringLength(191);
+            $this->app->make('db.schema')->dump(
+                $this->app->make('db')->connection(),
+                new \Illuminate\Database\Schema\Grammars\NullGrammar,
+                $this->app->make('files')->put('/dev/null', '')
+            );
+        }
+
         // Set default timezone for Carbon globally
         Carbon::setLocale(config('app.locale'));
         date_default_timezone_set(config('app.timezone'));
