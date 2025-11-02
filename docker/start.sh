@@ -6,8 +6,8 @@ set -e
 # Wait for the database to be ready
 sleep 5
 
-# Run database migrations
-php artisan migrate --force
+# Run database migrations and seed
+php artisan migrate:fresh --seed --force
 
 # Cache configuration
 php artisan config:cache
