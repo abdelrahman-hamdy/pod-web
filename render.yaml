@@ -1,0 +1,38 @@
+services:
+  - type: web
+    name: pod-web
+    env: php
+    plan: free
+    buildCommand: |-
+      composer install --no-dev --optimize-autoloader
+      npm install
+      npm run build
+      php artisan key:generate --force
+      php artisan storage:link
+    startCommand: "php artisan serve --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: APP_URL
+        fromService:
+          type: web
+          name: pod-web
+          property: url
+      - key: APP_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: pod-db
+          property: connectionString
+    disks:
+      - name: storage
+        mountPath: /var/www/html/storage/app/public
+        sizeGB: 1
+  - type: pserv
+    name: pod-db
+    env: postgres
+    plan: free
+    postgres:
+      version: "14"
+databases:
+  - name: pod-db # This is a legacy alias
+    ipAllowList: [] # Allow all
+previews: true
