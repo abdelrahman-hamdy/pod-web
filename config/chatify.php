@@ -35,7 +35,7 @@ return [
 
     /*
     |-------------------------------------
-    | Pusher API credentials
+    | Pusher API credentials (Using Reverb)
     |-------------------------------------
     */
     'pusher' => [
@@ -44,12 +44,17 @@ return [
         'secret' => env('REVERB_APP_SECRET', 'local-secret'),
         'app_id' => env('REVERB_APP_ID', 'local-app-id'),
         'options' => [
+            // For production, set REVERB_HOST to your domain (e.g., yourdomain.com)
+            // For local, it defaults to 127.0.0.1
             'host' => env('REVERB_HOST', '127.0.0.1'),
-            'port' => env('REVERB_PORT', 8080),
+            // Port: 8080 for HTTP, 443 for HTTPS, or custom port
+            'port' => (int) env('REVERB_PORT', 8080),
+            // Scheme: 'http' for local, 'https' for production
             'scheme' => env('REVERB_SCHEME', 'http'),
-            'encrypted' => false,
-            'useTLS' => false,
+            'encrypted' => env('REVERB_SCHEME', 'http') === 'https',
+            'useTLS' => env('REVERB_SCHEME', 'http') === 'https',
             'enabled' => true,
+            'cluster' => null, // Not needed for Reverb
         ],
     ],
 
