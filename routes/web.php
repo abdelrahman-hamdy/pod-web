@@ -235,7 +235,7 @@ Route::middleware('auth')->group(function () {
     });
 });
 
-Route::get('/storage/{path}', function ($path) {
+Route::get('storage/{path}', function ($path) {
     $path = storage_path('app/public/' . $path);
 
     if (!File::exists($path)) {
