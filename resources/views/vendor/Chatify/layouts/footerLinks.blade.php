@@ -95,12 +95,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // Make notification function globally available
     window.showNotification = showNotification;
     
-    // Track connection state to avoid false alerts on initial load
-    let connectionState = {
-        initialized: false,
-        wasConnected: false
-    };
-    
     // Override Chatify's checkInternet function to use our notifications
     if (typeof window.checkInternet === 'function') {
         const originalCheckInternet = window.checkInternet;
@@ -108,34 +102,16 @@ document.addEventListener('DOMContentLoaded', function() {
             // Call original function but hide the result
             originalCheckInternet(state, selector);
             
-            // Don't show "no internet" on initial load - only after connection attempts
-            if (!connectionState.initialized && state !== 'connected') {
-                connectionState.initialized = true;
-                return; // Skip notification on initial load
-            }
-            
-            // Track if we were connected
-            if (state === 'connected') {
-                connectionState.wasConnected = true;
-            }
-            
-            // Only show error if we were previously connected and now disconnected
+            // Show our notification instead
             switch(state) {
                 case 'connected':
-                    if (connectionState.wasConnected || connectionState.initialized) {
-                        showNotification('Connected', 'success', 2000);
-                    }
+                    showNotification('Connected', 'success', 2000);
                     break;
                 case 'connecting':
-                    if (connectionState.initialized) {
-                        showNotification('Reconnecting...', 'warning', 3000);
-                    }
+                    showNotification('Connecting...', 'warning', 3000);
                     break;
                 default:
-                    // Only show error if we were previously connected
-                    if (connectionState.wasConnected) {
-                        showNotification('Connection lost. Attempting to reconnect...', 'error', 4000);
-                    }
+                    showNotification('No internet access', 'error', 3000);
                     break;
             }
         };

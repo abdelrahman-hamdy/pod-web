@@ -64,18 +64,6 @@ DB_USERNAME=your_database_user
 DB_PASSWORD=your_database_password
 
 MAIL_MAILER=log
-
-# Broadcasting (Reverb for real-time chat)
-BROADCAST_CONNECTION=reverb
-
-# Reverb WebSocket Server Configuration
-# For production, generate secure keys using: php artisan reverb:install
-REVERB_APP_ID=your-app-id
-REVERB_APP_KEY=your-app-key
-REVERB_APP_SECRET=your-app-secret
-REVERB_HOST=your-domain.com  # Use your domain, not 127.0.0.1
-REVERB_PORT=443  # Use 443 for HTTPS, 8080 for HTTP
-REVERB_SCHEME=https  # Use https for production, http for local
 ```
 
 **Save:** `CTRL+X`, then `Y`, then `ENTER`
@@ -121,32 +109,7 @@ App\Models\User::create([
 exit
 ```
 
-### **Step 7: Setup Reverb (For Real-Time Chat)**
-
-Generate Reverb keys:
-```bash
-php artisan reverb:install
-```
-
-This will prompt you to update your `.env` file with secure keys. Then update:
-- `REVERB_HOST` - Your domain (e.g., `yourdomain.com`)
-- `REVERB_PORT` - `443` for HTTPS or `8080` for HTTP
-- `REVERB_SCHEME` - `https` for production
-
-Start Reverb server (using PM2 or supervisor):
-```bash
-# Install PM2 if not installed
-npm install -g pm2
-
-# Start Reverb
-pm2 start "php artisan reverb:start" --name reverb
-pm2 save
-pm2 startup
-```
-
-Or use supervisor or systemd - see Laravel Reverb docs for production setup.
-
-### **Step 8: Final Cache**
+### **Step 7: Final Cache**
 
 ```bash
 php artisan config:cache
@@ -154,7 +117,7 @@ php artisan route:cache
 php artisan view:cache
 ```
 
-### **Step 9: Verify Deployment**
+### **Step 8: Verify Deployment**
 
 Visit your domain: `https://your-domain.com`
 
