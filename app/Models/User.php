@@ -103,6 +103,32 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * Get the user's avatar URL.
+     * Handles both old absolute paths and new storage paths.
+     */
+    public function getAvatarUrlAttribute(): ?string
+    {
+        if (empty($this->attributes['avatar'])) {
+            return null;
+        }
+
+        $avatar = $this->attributes['avatar'];
+
+        // If it's already a full URL (http/https), return as-is
+        if (str_starts_with($avatar, 'http://') || str_starts_with($avatar, 'https://')) {
+            return $avatar;
+        }
+
+        // If it starts with /storage or /avatars (old absolute paths), return as-is
+        if (str_starts_with($avatar, '/storage') || str_starts_with($avatar, '/avatars')) {
+            return $avatar;
+        }
+
+        // Otherwise, treat it as a storage path and prepend /storage
+        return '/storage/' . $avatar;
+    }
+
+    /**
      * Check if profile is complete.
      */
     public function isProfileComplete(): bool

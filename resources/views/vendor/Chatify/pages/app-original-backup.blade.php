@@ -6,7 +6,7 @@
         <div class="m-header">
             <nav>
                 <a href="{{ route('home') }}" class="flex items-center space-x-3 hover:opacity-80 transition-opacity">
-                    <img src="{{ asset('storage/assets/pod-logo.png') }}" alt="People Of Data" class="h-6 w-6 object-contain" />
+                    <img src="{{ asset('assets/pod-logo.png') }}" alt="People Of Data" class="h-6 w-6 object-contain" />
                     <span class="text-lg font-semibold text-slate-800">People Of Data</span>
                 </a>
                 {{-- header buttons --}}

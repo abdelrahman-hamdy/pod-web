@@ -941,7 +941,7 @@
                 <div class="flex justify-between items-center">
                     <div class="flex items-center space-x-3">
                         <div class="w-10 h-10 flex items-center justify-center">
-                            <img src="{{ asset('storage/assets/pod-logo.png') }}" alt="Logo" class="w-full h-full object-contain">
+                            <img src="{{ asset('assets/pod-logo.png') }}" alt="Logo" class="w-full h-full object-contain">
                         </div>
                         <span class="text-2xl font-extrabold text-slate-900 tracking-tight">People Of Data</span>
                     </div>
@@ -952,7 +952,7 @@
                         <a href="#community" class="text-slate-600 font-semibold hover:text-primary transition-colors">Community</a>
                         @auth
                             <a href="{{ route('home') }}" class="flex items-center space-x-2 text-slate-600 font-semibold hover:text-primary transition-colors border border-slate-200 rounded-full pl-1 pr-4 py-1 hover:border-primary/50">
-                                <img class="w-8 h-8 rounded-full object-cover" src="{{ Auth::user()->avatar ?? 'https://ui-avatars.com/api/?name=' . urlencode(Auth::user()->name) . '&color=7F9CF5&background=EBF4FF' }}" alt="{{ Auth::user()->name }}">
+                                <img class="w-8 h-8 rounded-full object-cover" src="{{ Auth::user()->avatar_url ?? 'https://ui-avatars.com/api/?name=' . urlencode(Auth::user()->name) . '&color=7F9CF5&background=EBF4FF' }}" alt="{{ Auth::user()->name }}">
                                 <span>{{ Auth::user()->name }}</span>
                             </a>
                         @else
@@ -984,7 +984,7 @@
                     <div class="pt-4">
                         @auth
                             <a href="{{ route('home') }}" class="inline-flex items-center space-x-2 text-slate-600 font-semibold hover:text-primary transition-colors text-lg border border-slate-200 rounded-full pl-1 pr-4 py-1 hover:border-primary/50">
-                                <img class="w-8 h-8 rounded-full object-cover" src="{{ Auth::user()->avatar ?? 'https://ui-avatars.com/api/?name=' . urlencode(Auth::user()->name) . '&color=7F9CF5&background=EBF4FF' }}" alt="{{ Auth::user()->name }}">
+                                <img class="w-8 h-8 rounded-full object-cover" src="{{ Auth::user()->avatar_url ?? 'https://ui-avatars.com/api/?name=' . urlencode(Auth::user()->name) . '&color=7F9CF5&background=EBF4FF' }}" alt="{{ Auth::user()->name }}">
                                 <span>{{ Auth::user()->name }}</span>
                             </a>
                         @else

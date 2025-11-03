@@ -4,7 +4,7 @@
             <div>
                 <div class="flex items-center space-x-2 mb-6">
                     <div class="w-12 h-8 flex items-center justify-center">
-                        <img src="{{ asset('storage/assets/pod-logo.png') }}" alt="Logo" class="footer-pod-logo">
+                        <img src="{{ asset('assets/pod-logo.png') }}" alt="Logo" class="footer-pod-logo">
                     </div>
                     <span class="text-xl font-bold">People Of Data</span>
                 </div>

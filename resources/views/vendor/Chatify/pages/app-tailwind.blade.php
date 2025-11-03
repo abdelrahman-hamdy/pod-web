@@ -10,7 +10,7 @@
         <div class="p-4 border-b border-slate-200 bg-white">
             <div class="flex items-center justify-between mb-4">
                 <a href="{{ route('home') }}" class="flex items-center space-x-3 hover:opacity-80 transition-opacity">
-                    <img src="{{ asset('storage/assets/pod-logo.png') }}" alt="People Of Data" class="h-8 w-8 object-contain" />
+                    <img src="{{ asset('assets/pod-logo.png') }}" alt="People Of Data" class="h-8 w-8 object-contain" />
                     <span class="text-xl font-semibold text-slate-800">People Of Data</span>
                 </a>
                 <button class="settings-btn text-slate-600 hover:text-indigo-600 transition-colors p-2 rounded-lg hover:bg-slate-100">

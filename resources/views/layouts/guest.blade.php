@@ -64,7 +64,7 @@
                     <div class="flex items-center">
                         <a href="{{ route('index') }}" class="flex items-center space-x-3">
                             <div class="w-10 h-10 flex items-center justify-center">
-                                <img src="{{ asset('storage/assets/pod-logo.png') }}" alt="Logo" class="w-full h-full object-contain">
+                                <img src="{{ asset('assets/pod-logo.png') }}" alt="Logo" class="w-full h-full object-contain">
                             </div>
                             <span class="text-2xl font-extrabold text-slate-900 tracking-tight">People Of Data</span>
                         </a>

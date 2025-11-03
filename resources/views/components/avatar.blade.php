@@ -20,6 +20,15 @@
     
     // Use provided color or fallback to default
     $colorClass = $color ?? 'bg-slate-100 text-slate-600';
+    
+    // Convert avatar path to full URL if needed
+    if ($src && !str_starts_with($src, 'http://') && !str_starts_with($src, 'https://')) {
+        // If it doesn't start with http, check if it starts with /
+        if (!str_starts_with($src, '/')) {
+            // It's a storage path without /storage prefix
+            $src = '/storage/' . $src;
+        }
+    }
 @endphp
 
 <div class="relative inline-flex items-center justify-center {{ $sizeClass }} {{ $class }} rounded-full {{ $colorClass }} font-medium overflow-hidden avatar">
