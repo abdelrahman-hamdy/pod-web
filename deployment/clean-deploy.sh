@@ -55,6 +55,16 @@ else
 fi
 echo ""
 
+# Step 4.5: Run database migrations
+echo "🗄️  Step 4.5: Running database migrations..."
+if php artisan migrate --force --no-interaction 2>/dev/null; then
+    echo -e "${GREEN}✓ Migrations completed${NC}"
+else
+    echo -e "${YELLOW}⚠ Migrations may have failed or no new migrations${NC}"
+    echo "   Check manually: php artisan migrate:status"
+fi
+echo ""
+
 # Step 5: Clear all caches
 echo "🧹 Step 5: Clearing all caches..."
 php artisan config:clear
