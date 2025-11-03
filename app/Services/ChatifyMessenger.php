@@ -39,8 +39,7 @@ class ChatifyMessenger
      */
     public function getAttachmentUrl($attachment_name)
     {
-        // Override the domain to use pod-web.test instead of localhost
-        $baseUrl = 'http://pod-web.test';
+        $baseUrl = config('app.url');
 
         return $baseUrl.'/storage/'.config('chatify.attachments.folder').'/'.$attachment_name;
     }
@@ -72,20 +71,44 @@ class ChatifyMessenger
      */
     public function getUserAvatarUrl($user_avatar_name)
     {
-        // Use the correct domain instead of localhost
-        $baseUrl = 'http://pod-web.test';
+        $baseUrl = config('app.url');
 
         // If no avatar name provided, use default
         if (empty($user_avatar_name)) {
             $user_avatar_name = 'avatar.png';
         }
 
-        // Remove /storage/ prefix if it exists (some avatars are stored with full path)
+        // Check if it's already a full URL
+        if (str_starts_with($user_avatar_name, 'http://') || str_starts_with($user_avatar_name, 'https://')) {
+            return $user_avatar_name;
+        }
+
+        // Remove /storage/ prefix if it exists
         if (str_starts_with($user_avatar_name, '/storage/')) {
             $user_avatar_name = substr($user_avatar_name, 9); // Remove '/storage/'
         }
 
-        return $baseUrl.'/storage/'.$user_avatar_name;
+        // Check if path already includes folder structure (e.g., 'avatars/avatar_1.jpg')
+        if (str_contains($user_avatar_name, '/')) {
+            // Path already includes folder structure, use as-is
+            return $baseUrl.'/storage/'.$user_avatar_name;
+        }
+
+        // Try to find avatar in different locations
+        $storage = $this->storage();
+
+        // Check 'avatars/' folder first (ProfileController path)
+        if ($storage->exists('avatars/'.$user_avatar_name)) {
+            return $baseUrl.'/storage/avatars/'.$user_avatar_name;
+        }
+
+        // Check 'users-avatar/' folder (Chatify path)
+        if ($storage->exists(config('chatify.user_avatar.folder').'/'.$user_avatar_name)) {
+            return $baseUrl.'/storage/'.config('chatify.user_avatar.folder').'/'.$user_avatar_name;
+        }
+
+        // Default: try 'avatars/' folder
+        return $baseUrl.'/storage/avatars/'.$user_avatar_name;
     }
 
     /**
