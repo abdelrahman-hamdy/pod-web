@@ -1,17 +1,33 @@
+@if(config('broadcasting.default') !== 'null' && config('broadcasting.default') !== null)
 <script src="https://js.pusher.com/7.2.0/pusher.min.js"></script>
+@endif
 <script src="https://cdn.jsdelivr.net/npm/@joeattardi/emoji-button@2.8.2/dist/index.min.js"></script>
 <script>
     // Global Chatify variables from PHP to JS
+    @php
+        $pusherConfig = null;
+        if (config('broadcasting.default') !== 'null' && config('broadcasting.default') !== null) {
+            $pusherConfig = config('chatify.pusher');
+        }
+    @endphp
     window.chatify = {
         name: "{{ config('chatify.name') }}",
         sounds: {!! json_encode(config('chatify.sounds')) !!},
         allowedImages: {!! json_encode(config('chatify.attachments.allowed_images')) !!},
         allowedFiles: {!! json_encode(config('chatify.attachments.allowed_files')) !!},
         maxUploadSize: {{ app('ChatifyMessenger')->getMaxUploadSize() }},
-        pusher: {!! json_encode(config('chatify.pusher')) !!},
-        pusherAuthEndpoint: '{{route("pusher.auth")}}'
+        pusher: {!! $pusherConfig ? json_encode($pusherConfig) : 'null' !!},
+        pusherAuthEndpoint: '{{route("pusher.auth")}}',
+        broadcastingEnabled: {{ config('broadcasting.default') !== 'null' && config('broadcasting.default') !== null ? 'true' : 'false' }}
     };
     window.chatify.allAllowedExtensions = chatify.allowedImages.concat(chatify.allowedFiles);
+    
+    // Disable Pusher initialization if broadcasting is disabled
+    if (!window.chatify.broadcastingEnabled) {
+        window.Pusher = function() {};
+        window.Pusher.prototype = {};
+        console.log('Chat: Real-time broadcasting disabled. Messages will save, refresh page to see new messages.');
+    }
 </script>
 <script src="{{ asset('js/chatify/utils.js') }}"></script>
 <script src="{{ asset('js/chatify/code.js') }}?v={{ time() }}"></script>

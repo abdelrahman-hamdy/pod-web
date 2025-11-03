@@ -23,12 +23,35 @@ class ChatifyMessenger
 
     public function __construct()
     {
-        $this->pusher = new Pusher(
-            config('chatify.pusher.key'),
-            config('chatify.pusher.secret'),
-            config('chatify.pusher.app_id'),
-            config('chatify.pusher.options'),
-        );
+        // Don't initialize Pusher if broadcasting is disabled
+        // This allows chat to work on shared hosting without WebSocket
+        $this->pusher = null;
+    }
+
+    /**
+     * Get Pusher instance (lazy initialization)
+     *
+     * @return Pusher|null
+     */
+    protected function getPusherInstance()
+    {
+        // Only initialize if broadcasting is enabled
+        if ($this->pusher === null && config('broadcasting.default') !== 'null' && config('broadcasting.default') !== null) {
+            try {
+                $this->pusher = new Pusher(
+                    config('chatify.pusher.key'),
+                    config('chatify.pusher.secret'),
+                    config('chatify.pusher.app_id'),
+                    config('chatify.pusher.options'),
+                );
+            } catch (\Exception $e) {
+                // If Pusher fails to initialize, set to null and continue without real-time
+                \Log::warning('Pusher initialization failed: '.$e->getMessage());
+                $this->pusher = null;
+            }
+        }
+
+        return $this->pusher;
     }
 
     /**
@@ -363,8 +386,14 @@ class ChatifyMessenger
             return;
         }
 
+        $pusher = $this->getPusherInstance();
+        if (! $pusher) {
+            // Pusher not available, skip silently (chat works without real-time)
+            return;
+        }
+
         try {
-            $this->pusher->trigger($channel, $event, $data);
+            $pusher->trigger($channel, $event, $data);
         } catch (\Exception $e) {
             // Silently fail - allows graceful degradation when Reverb is not running
             \Log::info('Broadcasting skipped (Reverb not available): '.$e->getMessage());
@@ -382,7 +411,13 @@ class ChatifyMessenger
      */
     public function pusherAuth($user, $authUser, $channelName, $socketId)
     {
-        return $this->pusher->socket_auth($channelName, $socketId);
+        $pusher = $this->getPusherInstance();
+        if (! $pusher) {
+            // Return error response if Pusher is not available
+            return response()->json(['error' => 'Broadcasting not available'], 403);
+        }
+
+        return $pusher->socket_auth($channelName, $socketId);
     }
 
     /**
