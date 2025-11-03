@@ -23,6 +23,7 @@ return new class extends Migration
             $table->text('agenda')->nullable();
             $table->string('banner_image')->nullable();
             $table->datetime('registration_deadline');
+            $table->datetime('chat_opens_at')->nullable();
             $table->boolean('waitlist_enabled')->default(false);
             $table->boolean('is_active')->default(true);
             $table->foreignId('created_by')->constrained('users')->onDelete('cascade');
