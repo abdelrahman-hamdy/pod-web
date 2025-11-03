@@ -55,7 +55,7 @@
                     <div class="grid grid-cols-4 gap-4" id="existing-images-container">
                         @foreach($post->images as $index => $image)
                             <div class="relative group" data-image-index="{{ $index }}" data-image-path="{{ $image }}">
-                                <img src="{{ Storage::url($image) }}" alt="Post image" class="w-full h-24 object-cover rounded-lg">
+                                <img src="{{ uploaded_file($image) }}" alt="Post image" class="w-full h-24 object-cover rounded-lg">
                                 <button type="button" onclick="removeImagePreview('{{ $image }}', {{ $index }})" class="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                                     <i class="ri-close-line text-xs"></i>
                                 </button>

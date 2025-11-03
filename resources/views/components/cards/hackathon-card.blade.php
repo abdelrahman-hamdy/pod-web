@@ -11,7 +11,7 @@
     <!-- Image Header -->
     <div class="h-56 bg-gradient-to-br from-indigo-50 to-purple-50 relative overflow-hidden">
         @if($hackathon->cover_image)
-            <img src="{{ asset('storage/' . $hackathon->cover_image) }}" 
+            <img src="{{ uploaded_file($hackathon->cover_image) }}" 
                  alt="{{ $hackathon->title }}" 
                  class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500" />
         @else

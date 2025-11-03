@@ -10,7 +10,7 @@
         <!-- Event Header -->
         <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden mb-8">
             @if($event->banner_image)
-                <div class="h-64 bg-cover bg-center relative" style="background-image: url('{{ Storage::url($event->banner_image) }}')">
+                <div class="h-64 bg-cover bg-center relative" style="background-image: url('{{ uploaded_file($event->banner_image) }}')">
                     @if($event->category)
                         <div class="absolute top-4 right-4 px-3 py-1 rounded-full text-xs font-semibold text-white shadow-sm"
                              style="background-color: {{ $event->category->color }}">
@@ -372,7 +372,7 @@
         <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-md transition-shadow">
             <a href="{{ route('events.show', $relatedEvent) }}" class="block h-48 bg-gradient-to-br from-indigo-50 to-purple-50 relative overflow-hidden group">
                 @if($relatedEvent->banner_image)
-                    <img src="{{ Storage::url($relatedEvent->banner_image) }}" alt="{{ $relatedEvent->title }}" class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-300" />
+                    <img src="{{ uploaded_file($relatedEvent->banner_image) }}" alt="{{ $relatedEvent->title }}" class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-300" />
                 @else
                     <div class="w-full h-full bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center">
                         <div class="text-6xl text-indigo-300">

@@ -1004,7 +1004,7 @@
     <section class="relative min-h-screen flex items-center justify-center overflow-hidden pb-20">
         <!-- Hero Background Image -->
         <div class="hero-bg-animate hero-animate-delay-10 absolute inset-0"
-            style="background-image: url('{{ asset('storage/assets/images/hero section background3.png') }}'); background-position: bottom; background-size: 70rem; background-repeat: repeat-x;">
+            style="background-image: url('{{ static_asset('images/hero section background3.png') }}'); background-position: bottom; background-size: 70rem; background-repeat: repeat-x;">
         </div>
         <div class="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(79,70,229,0.15),transparent_50%)]"></div>
         <div class="absolute inset-0 bg-[radial-gradient(circle_at_80%_40%,rgba(124,58,237,0.12),transparent_50%)]"></div>
@@ -1159,17 +1159,17 @@
 
                             <!-- Networking Image -->
                             <div id="network-image" class="absolute inset-0 opacity-0 transition-all duration-500 ease-in-out">
-                                <img src="{{ asset('storage/assets/network-growth.png') }}" alt="Networking" class="w-full h-full object-cover rounded-full">
+                                <img src="{{ static_asset('network-growth.png') }}" alt="Networking" class="w-full h-full object-cover rounded-full">
                             </div>
 
                             <!-- Knowledge Image -->
                             <div id="knowledge-image" class="absolute inset-0 opacity-0 transition-all duration-500 ease-in-out">
-                                <img src="{{ asset('storage/assets/knowledge-exchange.png') }}" alt="Knowledge" class="w-full h-full object-cover rounded-full">
+                                <img src="{{ static_asset('knowledge-exchange.png') }}" alt="Knowledge" class="w-full h-full object-cover rounded-full">
                             </div>
 
                             <!-- Career Image -->
                             <div id="career-image" class="absolute inset-0 opacity-0 transition-all duration-500 ease-in-out">
-                                <img src="{{ asset('storage/assets/career-growth.png') }}" alt="Career" class="w-full h-full object-cover rounded-full">
+                                <img src="{{ static_asset('career-growth.png') }}" alt="Career" class="w-full h-full object-cover rounded-full">
                             </div>
 
                             <!-- Default Content -->

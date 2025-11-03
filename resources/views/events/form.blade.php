@@ -240,7 +240,7 @@
                     @if($isEdit && $event->banner_image)
                         <div class="mb-4">
                             <label class="block text-sm font-medium text-slate-700 mb-2">Current Banner</label>
-                            <img src="{{ Storage::url($event->banner_image) }}" alt="Current banner" class="w-full h-48 object-cover rounded-lg" />
+                            <img src="{{ uploaded_file($event->banner_image) }}" alt="Current banner" class="w-full h-48 object-cover rounded-lg" />
                         </div>
                     @endif
                     

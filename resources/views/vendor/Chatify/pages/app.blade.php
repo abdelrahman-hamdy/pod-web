@@ -155,7 +155,7 @@
         <div class="m-body flex-1 overflow-y-auto messages-container app-scroll relative">
             {{-- Fixed Background Layers --}}
             <div class="fixed inset-0 bg-gradient-to-br from-blue-500/20 to-indigo-600/20 pointer-events-none" style="top: 73px; left: 320px; right: 0; bottom: 0;"></div>
-            <div class="fixed inset-0 opacity-20 pointer-events-none" style="top: 73px; left: 320px; right: 0; bottom: 0; background-image: url('{{ asset('storage/assets/chat-bg-pattern.png') }}'); background-repeat: repeat; background-size: 380px;"></div>
+            <div class="fixed inset-0 opacity-20 pointer-events-none" style="top: 73px; left: 320px; right: 0; bottom: 0; background-image: url('{{ static_asset('chat-bg-pattern.png') }}'); background-repeat: repeat; background-size: 380px;"></div>
             
             {{-- Content Layer --}}
             <div class="relative z-10">

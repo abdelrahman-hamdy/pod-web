@@ -56,7 +56,7 @@
             <div class="grid {{ count($post->images) === 1 ? 'grid-cols-1' : 'grid-cols-2' }} gap-2">
                 @foreach(array_slice($post->images, 0, 4) as $index => $image)
                     <div class="relative w-full aspect-square cursor-pointer group" onclick="openLightbox({{ $post->id }}, {{ $index }})" data-post-id="{{ $post->id }}" data-image-index="{{ $index }}">
-                        <img src="{{ Storage::url($image) }}" 
+                        <img src="{{ uploaded_file($image) }}" 
                              alt="Post image" 
                              class="w-full h-full object-cover group-hover:opacity-90 transition-opacity rounded-lg">
                         @if($index === 3 && count($post->images) > 4)

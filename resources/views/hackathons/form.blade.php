@@ -208,7 +208,7 @@
                     @if($isEdit && $hackathon->cover_image)
                         <div class="mb-4">
                             <label class="block text-sm font-medium text-slate-700 mb-2">Current Cover</label>
-                            <img src="{{ Storage::url($hackathon->cover_image) }}" alt="Current cover" class="w-full h-48 object-cover rounded-lg" />
+                            <img src="{{ uploaded_file($hackathon->cover_image) }}" alt="Current cover" class="w-full h-48 object-cover rounded-lg" />
                         </div>
                     @endif
                     
