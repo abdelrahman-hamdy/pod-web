@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Intervention\Image\Drivers\Gd\Driver;
@@ -251,7 +252,8 @@ class ProfileController extends Controller
         $user = Auth::user();
 
         // If user has already seen onboarding, redirect to home
-        if ($user->profile_onboarding_seen) {
+        // Check if column exists to prevent errors during migration deployment
+        if (Schema::hasColumn('users', 'profile_onboarding_seen') && $user->profile_onboarding_seen) {
             return redirect()->route('home');
         }
 
@@ -271,8 +273,11 @@ class ProfileController extends Controller
         $user = Auth::user();
 
         // Mark that user has seen the onboarding, regardless of whether they complete all fields
-        $user->profile_onboarding_seen = true;
-        $user->save();
+        // Check if column exists to prevent errors during migration deployment
+        if (Schema::hasColumn('users', 'profile_onboarding_seen')) {
+            $user->profile_onboarding_seen = true;
+            $user->save();
+        }
 
         $result = $this->update($request);
 
@@ -316,7 +321,10 @@ class ProfileController extends Controller
         }
 
         try {
-            $user->profile_onboarding_seen = true;
+            // Check if column exists to prevent errors during migration deployment
+            if (Schema::hasColumn('users', 'profile_onboarding_seen')) {
+                $user->profile_onboarding_seen = true;
+            }
             $user->profile_completed = $user->isProfileComplete();
             $user->save();
 
