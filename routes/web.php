@@ -13,8 +13,6 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SearchController;
-use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Route;
 
 // Public Routes
@@ -105,7 +103,7 @@ Route::middleware('auth')->group(function () {
     // Profile Management
     Route::get('/profile/complete', [ProfileController::class, 'showCompletionForm'])->name('profile.complete');
     Route::post('/profile/complete', [ProfileController::class, 'completeProfile'])->name('profile.complete.submit');
-    Route::get('/profile/complete/skip', [ProfileController::class, 'skipProfile'])->name('profile.complete.skip');
+    Route::post('/profile/complete/skip', [ProfileController::class, 'skipProfile'])->name('profile.complete.skip');
     Route::get('/profile/edit', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::get('/profile/change-password', [ProfileController::class, 'changePassword'])->name('profile.change-password');
     Route::delete('/profile/delete', [ProfileController::class, 'deleteAccount'])->name('profile.delete');

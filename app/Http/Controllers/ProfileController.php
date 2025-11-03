@@ -308,11 +308,29 @@ class ProfileController extends Controller
     public function skipProfile()
     {
         $user = Auth::user();
-        $user->profile_onboarding_seen = true;
-        $user->profile_completed = $user->isProfileComplete();
-        $user->save();
 
-        return redirect()->route('home')->with('success', 'Welcome to People Of Data! You can complete your profile anytime from settings.');
+        if (! $user) {
+            \Log::error('No authenticated user in skipProfile - redirecting to login');
+
+            return redirect()->route('login')->with('message', 'Please log in to continue.');
+        }
+
+        try {
+            $user->profile_onboarding_seen = true;
+            $user->profile_completed = $user->isProfileComplete();
+            $user->save();
+
+            \Log::info('Profile onboarding skipped successfully', ['user_id' => $user->id]);
+
+            return redirect()->route('home')->with('success', 'Welcome to People Of Data! You can complete your profile anytime from settings.');
+        } catch (\Exception $e) {
+            \Log::error('Error in skipProfile', [
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return redirect()->route('home')->with('error', 'Something went wrong, but welcome to People Of Data!');
+        }
     }
 
     /**

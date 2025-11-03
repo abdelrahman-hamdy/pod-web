@@ -24,6 +24,7 @@ class EnsureProfileCompleted
                 && ! $request->routeIs('profile.complete.submit')
                 && ! $request->routeIs('profile.complete.skip')
                 && ! $request->routeIs('logout')) {
+
                 return redirect()->route('profile.complete');
             }
         }

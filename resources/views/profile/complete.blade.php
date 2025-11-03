@@ -346,9 +346,12 @@
 
                 <!-- Submit Button -->
                 <div class="flex items-center justify-end space-x-4">
-                    <a href="{{ route('profile.complete.skip') }}" class="px-6 py-3 text-slate-600 hover:text-slate-800 font-medium transition-colors">
-                        Skip for now
-                    </a>
+                    <form method="POST" action="{{ route('profile.complete.skip') }}" class="inline">
+                        @csrf
+                        <button type="submit" class="px-6 py-3 text-slate-600 hover:text-slate-800 font-medium transition-colors">
+                            Skip for now
+                        </button>
+                    </form>
                     <button type="submit" id="submit-btn" class="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-all font-medium shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed">
                         <span id="submit-text">Complete Profile</span>
                         <span id="submit-loading" class="hidden">
