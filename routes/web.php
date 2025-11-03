@@ -13,6 +13,8 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SearchController;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Route;
 
 // Public Routes
@@ -232,3 +234,19 @@ Route::middleware('auth')->group(function () {
         // Route::resource('event-categories', App\Http\Controllers\Admin\EventCategoryController::class);
     });
 });
+
+Route::get('/storage/{path}', function ($path) {
+    $path = storage_path('app/public/' . $path);
+
+    if (!File::exists($path)) {
+        abort(404);
+    }
+
+    $file = File::get($path);
+    $type = File::mimeType($path);
+
+    $response = Response::make($file, 200);
+    $response->header("Content-Type", $type);
+
+    return $response;
+})->where('path', '.*')->name('storage.files');
