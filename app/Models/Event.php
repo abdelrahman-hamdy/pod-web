@@ -25,6 +25,7 @@ class Event extends Model
         'created_by',
         'format',
         'category_id',
+        'type',
     ];
 
     protected $casts = [

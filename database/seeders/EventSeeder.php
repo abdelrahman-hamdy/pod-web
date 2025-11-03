@@ -32,7 +32,6 @@ class EventSeeder extends Seeder
             [
                 'title' => 'AI Summit Egypt 2024',
                 'description' => 'Join Egypt\'s largest AI conference featuring international speakers, workshops, and networking opportunities. This comprehensive event will cover the latest trends in artificial intelligence, machine learning, and data science.',
-                'type' => 'conference',
                 'start_date' => Carbon::now()->addDays(15)->setTime(9, 0),
                 'end_date' => Carbon::now()->addDays(15)->setTime(18, 0),
                 'location' => 'Cairo International Convention Center, Cairo, Egypt',
@@ -46,7 +45,6 @@ class EventSeeder extends Seeder
             [
                 'title' => 'Machine Learning Fundamentals Workshop',
                 'description' => 'Hands-on workshop covering essential ML algorithms and practical implementation techniques. Perfect for beginners and intermediate practitioners looking to enhance their skills.',
-                'type' => 'workshop',
                 'start_date' => Carbon::now()->addDays(20)->setTime(10, 0),
                 'end_date' => Carbon::now()->addDays(20)->setTime(16, 0),
                 'location' => 'Alexandria University, Faculty of Engineering, Alexandria, Egypt',
@@ -60,7 +58,6 @@ class EventSeeder extends Seeder
             [
                 'title' => 'Cairo Data Professionals Meetup',
                 'description' => 'Monthly networking event for data professionals to share experiences and build connections. This casual meetup is perfect for networking and knowledge sharing.',
-                'type' => 'networking',
                 'start_date' => Carbon::now()->addDays(28)->setTime(18, 0),
                 'end_date' => Carbon::now()->addDays(28)->setTime(21, 0),
                 'location' => 'TechHub Cairo, New Cairo, Egypt',
@@ -74,7 +71,6 @@ class EventSeeder extends Seeder
             [
                 'title' => 'Deep Learning Bootcamp',
                 'description' => 'Intensive 3-day bootcamp covering neural networks, CNNs, RNNs, and transformer architectures. This comprehensive program is designed for intermediate to advanced practitioners.',
-                'type' => 'workshop',
                 'start_date' => Carbon::now()->addDays(35)->setTime(9, 0),
                 'end_date' => Carbon::now()->addDays(37)->setTime(17, 0),
                 'location' => 'Giza Technology Park, Giza, Egypt',
@@ -88,7 +84,6 @@ class EventSeeder extends Seeder
             [
                 'title' => 'Data Visualization Summit',
                 'description' => 'Explore the art and science of data visualization with industry experts. Learn about the latest tools, techniques, and best practices in data visualization.',
-                'type' => 'conference',
                 'start_date' => Carbon::now()->addDays(42)->setTime(8, 30),
                 'end_date' => Carbon::now()->addDays(42)->setTime(19, 0),
                 'location' => 'Cairo Marriott Hotel, Zamalek, Cairo, Egypt',
@@ -102,7 +97,6 @@ class EventSeeder extends Seeder
             [
                 'title' => 'Blockchain & Data Analytics Meetup',
                 'description' => 'Discover how blockchain technology is revolutionizing data analytics. Join us for an evening of learning and networking with industry professionals.',
-                'type' => 'networking',
                 'start_date' => Carbon::now()->addDays(48)->setTime(19, 0),
                 'end_date' => Carbon::now()->addDays(48)->setTime(22, 0),
                 'location' => 'Innovation Hub, New Administrative Capital, Egypt',
