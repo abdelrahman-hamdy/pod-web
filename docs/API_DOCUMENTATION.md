@@ -3,8 +3,11 @@
 Complete REST API documentation for mobile app development.
 
 **Base URL:** `https://lightgrey-echidna-227060.hostingersite.com/api/v1`  
+**Swagger UI:** `https://lightgrey-echidna-227060.hostingersite.com/docs`  
 **Version:** 1.0  
 **Authentication:** Bearer Token (Laravel Sanctum)
+
+> **Note:** Accessing `/api/v1` directly will show a 404 error - this is normal. The `/api/v1` is a route prefix, not an endpoint. Use specific endpoints like `/api/v1/auth/login`, `/api/v1/posts`, etc.
 
 ---
 
@@ -1165,7 +1168,11 @@ For complete mobile app setup guide, see:
 
 **Base URL:** `https://lightgrey-echidna-227060.hostingersite.com/api/v1`
 
+**Swagger UI:** Visit `https://lightgrey-echidna-227060.hostingersite.com/docs` to test endpoints interactively
+
 **Test Token:** Get from `/auth/login` endpoint
+
+> **Important:** Accessing `/api/v1` directly in browser shows 404 - this is expected behavior. Use specific endpoints like `/api/v1/auth/login` or use the Swagger UI at `/docs` for interactive testing.
 
 ---
 

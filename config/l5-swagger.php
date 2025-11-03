@@ -19,10 +19,12 @@ return [
                 'docs_yaml' => 'api-docs.yaml',
                 'format_to_use_for_docs' => env('L5_FORMAT_TO_USE_FOR_DOCS', 'yaml'),
                 'docs' => storage_path('api-docs'),
-                'annotations' => [],
+                'annotations' => [
+                    base_path('app/Http/Controllers/Api'),
+                ],
             ],
 
-            'generate_always' => false,
+            'generate_always' => env('L5_SWAGGER_GENERATE_ALWAYS', false),
             'generate_from_annotations' => false,
         ],
     ],
