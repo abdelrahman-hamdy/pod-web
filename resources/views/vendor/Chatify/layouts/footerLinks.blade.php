@@ -22,11 +22,16 @@
     };
     window.chatify.allAllowedExtensions = chatify.allowedImages.concat(chatify.allowedFiles);
     
-    // Disable Pusher initialization if broadcasting is disabled
+    // Use HTTP polling if WebSocket is disabled (works on shared hosting)
     if (!window.chatify.broadcastingEnabled) {
+        // Disable Pusher
         window.Pusher = function() {};
         window.Pusher.prototype = {};
-        console.log('Chat: Real-time broadcasting disabled. Messages will save, refresh page to see new messages.');
+        
+        // Enable HTTP polling for real-time updates
+        window.chatify.pollingEnabled = true;
+        window.chatify.pollingInterval = 3000; // Check every 3 seconds
+        console.log('Chat: Using HTTP polling for real-time updates (works on shared hosting).');
     }
 </script>
 <script src="{{ asset('js/chatify/utils.js') }}"></script>

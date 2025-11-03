@@ -48,7 +48,23 @@ const pusherConfig = {
 if (chatify.pusher.options.cluster) {
     pusherConfig.cluster = chatify.pusher.options.cluster;
 }
-const pusher = new Pusher(chatify.pusher.key, pusherConfig);
+
+// Only initialize Pusher if broadcasting is enabled
+let pusher = null;
+if (chatify.broadcastingEnabled && chatify.pusher && chatify.pusher.key) {
+    try {
+        pusher = new Pusher(chatify.pusher.key, pusherConfig);
+    } catch (e) {
+        console.warn('Pusher initialization failed, falling back to polling:', e);
+        chatify.pollingEnabled = true;
+        chatify.pollingInterval = 3000;
+    }
+} else {
+    // Use HTTP polling instead
+    chatify.pollingEnabled = true;
+    chatify.pollingInterval = 3000;
+    console.log('Chat: Broadcasting disabled, using HTTP polling for real-time updates.');
+}
 /**
  *-------------------------------------------------------------
  * Re-usable methods
@@ -645,22 +661,117 @@ function cancelUpdatingAvatar() {
  *-------------------------------------------------------------
  */
 
-// subscribe to the channel
+// subscribe to the channel (only if Pusher is available)
 const channelName = "private-chatify";
-var channel = pusher.subscribe(`${channelName}.${auth_id}`);
-var clientSendChannel;
-var clientListenChannel;
+var channel = null;
+var clientSendChannel = null;
+var clientListenChannel = null;
 
-function initClientChannel() {
-  if (getMessengerId()) {
-    clientSendChannel = pusher.subscribe(`${channelName}.${getMessengerId()}`);
-    clientListenChannel = pusher.subscribe(`${channelName}.${auth_id}`);
+if (pusher) {
+  try {
+    channel = pusher.subscribe(`${channelName}.${auth_id}`);
+  } catch (e) {
+    console.warn('Pusher subscription failed, using polling:', e);
+    chatify.pollingEnabled = true;
   }
 }
-initClientChannel();
 
-// Listen to messages, and append if data received
-channel.bind("messaging", function (data) {
+function initClientChannel() {
+  if (pusher && getMessengerId()) {
+    try {
+      clientSendChannel = pusher.subscribe(`${channelName}.${getMessengerId()}`);
+      clientListenChannel = pusher.subscribe(`${channelName}.${auth_id}`);
+    } catch (e) {
+      console.warn('Client channel subscription failed, using polling:', e);
+      chatify.pollingEnabled = true;
+    }
+  }
+}
+if (pusher) {
+  initClientChannel();
+}
+
+// HTTP Polling for real-time updates (when WebSocket is not available)
+let pollingInterval = null;
+let lastMessageId = 0;
+
+function startPolling() {
+  if (!chatify.pollingEnabled) return;
+  
+  // Clear existing interval
+  if (pollingInterval) {
+    clearInterval(pollingInterval);
+  }
+  
+  pollingInterval = setInterval(function() {
+    if (getMessengerId() && getMessengerId() != 0) {
+      // Check for new messages in current conversation
+      $.ajax({
+        url: url + "/fetchMessages",
+        type: "POST",
+        data: { id: getMessengerId() },
+        headers: {
+          "X-CSRF-TOKEN": csrfToken,
+        },
+        success: function(response) {
+          if (response.messages) {
+            // Parse messages and append new ones
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(response.messages, 'text/html');
+            const messages = doc.querySelectorAll('.message-card');
+            
+            messages.forEach(function(msg) {
+              const msgId = msg.getAttribute('data-id');
+              if (msgId && parseInt(msgId) > lastMessageId) {
+                // New message found
+                if (!$(`.messages .message-card[data-id="${msgId}"]`).length) {
+                  messagesContainer.find(".messages").find(".message-hint").remove();
+                  messagesContainer.find(".messages").append(msg.outerHTML);
+                  scrollToBottom(messagesContainer);
+                  
+                  // Update last message ID
+                  if (parseInt(msgId) > lastMessageId) {
+                    lastMessageId = parseInt(msgId);
+                  }
+                  
+                  // Check if it's from the other user
+                  const fromId = msg.getAttribute('data-from-id');
+                  const toId = msg.getAttribute('data-to-id');
+                  if (fromId == getMessengerId() && toId == auth_id) {
+                    makeSeen(true);
+                    playNotificationSound("new_message", "default");
+                  }
+                }
+              }
+            });
+            
+            // Update last message ID if we have messages
+            if (messages.length > 0) {
+              const lastMsg = messages[messages.length - 1];
+              const lastMsgId = lastMsg.getAttribute('data-id');
+              if (lastMsgId) {
+                lastMessageId = parseInt(lastMsgId);
+              }
+            }
+          }
+        },
+        error: function() {
+          // Silently fail - polling will retry
+        }
+      });
+    }
+  }, chatify.pollingInterval || 3000);
+}
+
+// Start polling if enabled
+if (chatify.pollingEnabled) {
+  startPolling();
+  console.log('HTTP polling started for real-time chat updates.');
+}
+
+// Listen to messages via Pusher (only if Pusher is available)
+if (channel) {
+  channel.bind("messaging", function (data) {
   if (data.from_id == getMessengerId() && data.to_id == auth_id) {
     $(".messages").find(".message-hint").remove();
     messagesContainer.find(".messages").append(data.message);
@@ -1294,25 +1405,34 @@ $(document).ready(function () {
   // make message input autosize.
   autosize($(".m-send"));
 
-  // check if pusher has access to the channel [Internet status]
-  pusher.connection.bind("state_change", function (states) {
-    let selector = $(".internet-connection");
-    checkInternet(states.current, selector);
-    // listening for pusher:subscription_succeeded
-    channel.bind("pusher:subscription_succeeded", function () {
-      // On connection state change [Updating] and get [info & msgs]
-      if (getMessengerId() != 0) {
-        if (
-          $(".messenger-list-item")
-            .find("tr[data-action]")
-            .attr("data-action") == "1"
-        ) {
-          $(".messenger-listView").hide();
-        }
-        IDinfo(getMessengerId());
+  // check if pusher has access to the channel [Internet status] (only if Pusher is available)
+  if (pusher && pusher.connection) {
+    pusher.connection.bind("state_change", function (states) {
+      let selector = $(".internet-connection");
+      checkInternet(states.current, selector);
+      // listening for pusher:subscription_succeeded
+      if (channel) {
+        channel.bind("pusher:subscription_succeeded", function () {
+          // On connection state change [Updating] and get [info & msgs]
+          if (getMessengerId() != 0) {
+            if (
+              $(".messenger-list-item")
+                .find("tr[data-action]")
+                .attr("data-action") == "1"
+            ) {
+              $(".messenger-listView").hide();
+            }
+            IDinfo(getMessengerId());
+          }
+        });
       }
     });
-  });
+  } else {
+    // If no Pusher, initialize chat immediately with polling
+    if (getMessengerId() != 0) {
+      IDinfo(getMessengerId());
+    }
+  }
 
   // tabs on click, show/hide...
   $(".messenger-listView-tabs a").on("click", function () {
