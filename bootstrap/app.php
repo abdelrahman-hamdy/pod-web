@@ -41,12 +41,27 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        if (! app()->environment('local')) {
+        // Log all exceptions for debugging
+        $exceptions->report(function (\Throwable $e) {
+            \Log::error('Exception caught', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+        });
+
+        // Only show custom error pages in production
+        if (! app()->environment('local') && ! app()->environment('testing')) {
             $exceptions->render(function (\Symfony\Component\HttpKernel\Exception\NotFoundHttpException $e, $request) {
                 return response()->view('errors.404', [], 404);
             });
 
             $exceptions->render(function (\Throwable $e, $request) {
+                // In debug mode, show actual error instead of 500 page
+                if (config('app.debug')) {
+                    return null; // Let Laravel show the error page
+                }
                 return response()->view('errors.500', [], 500);
             });
         }
