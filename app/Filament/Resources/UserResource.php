@@ -150,6 +150,7 @@ class UserResource extends Resource
                             ->dehydrated(fn ($state) => filled($state))
                             ->required(fn (string $context): bool => $context === 'create'),
                         Forms\Components\Toggle::make('profile_completed'),
+                        Forms\Components\Toggle::make('profile_onboarding_seen'),
                         Forms\Components\Toggle::make('is_active'),
                         Forms\Components\DateTimePicker::make('email_verified_at'),
                     ])
@@ -236,6 +237,8 @@ class UserResource extends Resource
                 Tables\Columns\TextColumn::make('website_url')
                     ->searchable(),
                 Tables\Columns\IconColumn::make('profile_completed')
+                    ->boolean(),
+                Tables\Columns\IconColumn::make('profile_onboarding_seen')
                     ->boolean(),
                 Tables\Columns\IconColumn::make('is_active')
                     ->boolean(),

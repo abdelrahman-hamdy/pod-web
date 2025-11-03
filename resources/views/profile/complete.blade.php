@@ -65,9 +65,9 @@
                         <img id="avatar-preview" 
                              src="{{ auth()->user()->avatar ? auth()->user()->avatar : (auth()->user()->avatar_color ? '#' : '/default-avatar.jpg') }}" 
                              alt="{{ auth()->user()->name }}" 
-                             class="w-full h-full object-cover"
+                             class="w-24 h-24 rounded-full object-cover"
                              style="display: {{ auth()->user()->avatar ? 'block' : 'none' }};">
-                        <div id="avatar-placeholder" class="w-full h-full flex items-center justify-center {{ auth()->user()->avatar_color ?? 'bg-slate-200' }} text-2xl font-semibold" style="display: {{ auth()->user()->avatar ? 'none' : 'flex' }};">
+                        <div id="avatar-placeholder" class="w-24 h-24 rounded-full flex items-center justify-center {{ auth()->user()->avatar_color ?? 'bg-slate-200' }} text-slate-700 text-2xl font-semibold" style="display: {{ auth()->user()->avatar ? 'none' : 'flex' }};">
                             {{ strtoupper(substr(auth()->user()->name ?? 'U', 0, 2)) }}
                         </div>
                     </div>

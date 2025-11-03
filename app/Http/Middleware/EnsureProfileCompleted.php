@@ -17,8 +17,8 @@ class EnsureProfileCompleted
     {
         $user = $request->user();
 
-        // If user is authenticated and profile is not completed
-        if ($user && ! $user->profile_completed) {
+        // If user is authenticated and hasn't seen the profile onboarding yet
+        if ($user && ! $user->profile_onboarding_seen) {
             // Allow access to profile completion route, skip route, and logout route
             if (! $request->routeIs('profile.complete')
                 && ! $request->routeIs('profile.complete.submit')

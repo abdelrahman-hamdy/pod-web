@@ -39,6 +39,7 @@ class UserResource extends JsonResource
             'website_url' => $this->website_url,
             'role' => is_object($this->role) && method_exists($this->role, 'value') ? $this->role->value : $this->role,
             'profile_completed' => $this->profile_completed,
+            'profile_onboarding_seen' => $this->profile_onboarding_seen,
             'is_active' => $this->is_active,
             'email_verified_at' => $this->email_verified_at?->toISOString(),
             'created_at' => $this->created_at->toISOString(),

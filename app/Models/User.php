@@ -55,6 +55,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'provider',
         'provider_id',
         'profile_completed',
+        'profile_onboarding_seen',
         'is_active',
         'role',
         'active_status',
@@ -89,6 +90,7 @@ class User extends Authenticatable implements MustVerifyEmail
             'education' => 'array',
             'portfolio_links' => 'array',
             'profile_completed' => 'boolean',
+            'profile_onboarding_seen' => 'boolean',
             'is_active' => 'boolean',
             'active_status' => 'boolean',
         ];

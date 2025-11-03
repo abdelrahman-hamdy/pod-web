@@ -139,9 +139,10 @@ class ProfileController extends BaseApiController
     {
         $user = $request->user();
 
-        // Mark profile as completed
+        // Mark profile as completed and onboarding as seen
         $user->update([
-            'profile_completed' => true,
+            'profile_completed' => $user->isProfileComplete(),
+            'profile_onboarding_seen' => true,
         ]);
 
         return $this->successResponse(new UserResource($user), 'Profile completed successfully');

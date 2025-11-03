@@ -250,7 +250,8 @@ class ProfileController extends Controller
     {
         $user = Auth::user();
 
-        if ($user->profile_completed) {
+        // If user has already seen onboarding, redirect to home
+        if ($user->profile_onboarding_seen) {
             return redirect()->route('home');
         }
 
@@ -267,6 +268,12 @@ class ProfileController extends Controller
             'request_data' => $request->all(),
         ]);
 
+        $user = Auth::user();
+
+        // Mark that user has seen the onboarding, regardless of whether they complete all fields
+        $user->profile_onboarding_seen = true;
+        $user->save();
+
         $result = $this->update($request);
 
         \Log::info('Profile completion update result', [
@@ -274,27 +281,38 @@ class ProfileController extends Controller
             'result_type' => get_class($result),
         ]);
 
-        // If update was successful and no validation errors, redirect to home
-        if ($result instanceof \Illuminate\Http\RedirectResponse && ! $result->getSession()->has('errors')) {
-            \Log::info('Redirecting to home after profile completion');
+        // Check if update was successful (redirect without errors)
+        if ($result instanceof \Illuminate\Http\RedirectResponse) {
+            $session = $result->getSession();
 
-            return redirect()->route('home')->with('success', 'Profile completed successfully!');
+            if ($session && $session->has('errors')) {
+                // If there were validation errors, redirect to home anyway but with info message
+                \Log::info('Profile completion had validation errors, redirecting to home anyway');
+
+                return redirect()->route('home')->with('info', 'Welcome! Some profile fields need correction. You can update them from your profile settings.');
+            }
+
+            // Success - no validation errors
+            \Log::info('Redirecting to home after successful profile completion');
+
+            return redirect()->route('home')->with('success', 'Profile saved successfully! You can update it anytime from your profile settings.');
         }
 
-        // If there were validation errors, return the error response
-        return $result;
+        // Fallback - shouldn't reach here, but redirect to home anyway
+        return redirect()->route('home')->with('info', 'Welcome! You can complete your profile from settings anytime.');
     }
 
     /**
-     * Handle profile skip - mark profile as completed without filling details.
+     * Handle profile skip - mark onboarding as seen without filling details.
      */
     public function skipProfile()
     {
         $user = Auth::user();
-        $user->profile_completed = true;
+        $user->profile_onboarding_seen = true;
+        $user->profile_completed = $user->isProfileComplete();
         $user->save();
 
-        return redirect()->route('home')->with('success', 'Welcome to People Of Data!');
+        return redirect()->route('home')->with('success', 'Welcome to People Of Data! You can complete your profile anytime from settings.');
     }
 
     /**
