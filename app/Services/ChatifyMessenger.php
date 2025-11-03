@@ -36,15 +36,36 @@ class ChatifyMessenger
     protected function getPusherInstance()
     {
         // Only initialize if broadcasting is enabled
-        if ($this->pusher === null && config('broadcasting.default') !== 'null' && config('broadcasting.default') !== null) {
+        if ($this->pusher === null) {
             try {
-                $this->pusher = new Pusher(
-                    config('chatify.pusher.key'),
-                    config('chatify.pusher.secret'),
-                    config('chatify.pusher.app_id'),
-                    config('chatify.pusher.options'),
-                );
-            } catch (\Exception $e) {
+                $broadcastDefault = config('broadcasting.default', 'null');
+                if ($broadcastDefault === 'null' || $broadcastDefault === null) {
+                    return null;
+                }
+
+                $key = config('chatify.pusher.key', '');
+                $secret = config('chatify.pusher.secret', '');
+                $appId = config('chatify.pusher.app_id', '');
+                $options = config('chatify.pusher.options', []);
+
+                // Validate required config values
+                if (empty($key) || empty($secret) || empty($appId)) {
+                    return null;
+                }
+
+                // Fix host if needed - extract from APP_URL if REVERB_HOST not set
+                if (empty($options['host']) || $options['host'] === '127.0.0.1') {
+                    $appUrl = config('app.url', '');
+                    if ($appUrl) {
+                        $parsed = parse_url($appUrl);
+                        if (isset($parsed['host'])) {
+                            $options['host'] = $parsed['host'];
+                        }
+                    }
+                }
+
+                $this->pusher = new Pusher($key, $secret, $appId, $options);
+            } catch (\Throwable $e) {
                 // If Pusher fails to initialize, set to null and continue without real-time
                 \Log::warning('Pusher initialization failed: '.$e->getMessage());
                 $this->pusher = null;

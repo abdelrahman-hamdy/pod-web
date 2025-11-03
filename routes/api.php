@@ -172,6 +172,10 @@ Route::prefix('v1')->group(function () {
         Route::get('/search/jobs', [SearchController::class, 'jobs']);
         Route::get('/search/hackathons', [SearchController::class, 'hackathons']);
         Route::get('/search/users', [SearchController::class, 'users']);
+
+        // Real-time Broadcasting (for mobile apps)
+        Route::post('/broadcasting/auth', [\App\Http\Controllers\Chatify\MessagesController::class, 'pusherAuth'])
+            ->name('api.broadcasting.auth');
     });
 
     // Strict Rate Limiting Routes (Authentication)

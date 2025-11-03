@@ -1,38 +1,17 @@
-@if(config('broadcasting.default') !== 'null' && config('broadcasting.default') !== null)
 <script src="https://js.pusher.com/7.2.0/pusher.min.js"></script>
-@endif
 <script src="https://cdn.jsdelivr.net/npm/@joeattardi/emoji-button@2.8.2/dist/index.min.js"></script>
 <script>
     // Global Chatify variables from PHP to JS
-    @php
-        $pusherConfig = null;
-        if (config('broadcasting.default') !== 'null' && config('broadcasting.default') !== null) {
-            $pusherConfig = config('chatify.pusher');
-        }
-    @endphp
     window.chatify = {
         name: "{{ config('chatify.name') }}",
         sounds: {!! json_encode(config('chatify.sounds')) !!},
         allowedImages: {!! json_encode(config('chatify.attachments.allowed_images')) !!},
         allowedFiles: {!! json_encode(config('chatify.attachments.allowed_files')) !!},
         maxUploadSize: {{ app('ChatifyMessenger')->getMaxUploadSize() }},
-        pusher: {!! $pusherConfig ? json_encode($pusherConfig) : 'null' !!},
-        pusherAuthEndpoint: '{{route("pusher.auth")}}',
-        broadcastingEnabled: {{ config('broadcasting.default') !== 'null' && config('broadcasting.default') !== null ? 'true' : 'false' }}
+        pusher: {!! json_encode(config('chatify.pusher')) !!},
+        pusherAuthEndpoint: '{{route("pusher.auth")}}'
     };
     window.chatify.allAllowedExtensions = chatify.allowedImages.concat(chatify.allowedFiles);
-    
-    // Use HTTP polling if WebSocket is disabled (works on shared hosting)
-    if (!window.chatify.broadcastingEnabled) {
-        // Disable Pusher
-        window.Pusher = function() {};
-        window.Pusher.prototype = {};
-        
-        // Enable HTTP polling for real-time updates
-        window.chatify.pollingEnabled = true;
-        window.chatify.pollingInterval = 3000; // Check every 3 seconds
-        console.log('Chat: Using HTTP polling for real-time updates (works on shared hosting).');
-    }
 </script>
 <script src="{{ asset('js/chatify/utils.js') }}"></script>
 <script src="{{ asset('js/chatify/code.js') }}?v={{ time() }}"></script>

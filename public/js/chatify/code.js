@@ -48,23 +48,7 @@ const pusherConfig = {
 if (chatify.pusher.options.cluster) {
     pusherConfig.cluster = chatify.pusher.options.cluster;
 }
-
-// Only initialize Pusher if broadcasting is enabled
-let pusher = null;
-if (chatify.broadcastingEnabled && chatify.pusher && chatify.pusher.key) {
-    try {
-        pusher = new Pusher(chatify.pusher.key, pusherConfig);
-    } catch (e) {
-        console.warn('Pusher initialization failed, falling back to polling:', e);
-        chatify.pollingEnabled = true;
-        chatify.pollingInterval = 3000;
-    }
-} else {
-    // Use HTTP polling instead
-    chatify.pollingEnabled = true;
-    chatify.pollingInterval = 3000;
-    console.log('Chat: Broadcasting disabled, using HTTP polling for real-time updates.');
-}
+const pusher = new Pusher(chatify.pusher.key, pusherConfig);
 /**
  *-------------------------------------------------------------
  * Re-usable methods
@@ -661,168 +645,22 @@ function cancelUpdatingAvatar() {
  *-------------------------------------------------------------
  */
 
-// subscribe to the channel (only if Pusher is available)
+// subscribe to the channel
 const channelName = "private-chatify";
-var channel = null;
-var clientSendChannel = null;
-var clientListenChannel = null;
-
-if (pusher) {
-  try {
-    channel = pusher.subscribe(`${channelName}.${auth_id}`);
-  } catch (e) {
-    console.warn('Pusher subscription failed, using polling:', e);
-    chatify.pollingEnabled = true;
-  }
-}
+var channel = pusher.subscribe(`${channelName}.${auth_id}`);
+var clientSendChannel;
+var clientListenChannel;
 
 function initClientChannel() {
-  if (pusher && getMessengerId()) {
-    try {
-      clientSendChannel = pusher.subscribe(`${channelName}.${getMessengerId()}`);
-      clientListenChannel = pusher.subscribe(`${channelName}.${auth_id}`);
-    } catch (e) {
-      console.warn('Client channel subscription failed, using polling:', e);
-      chatify.pollingEnabled = true;
-    }
+  if (getMessengerId()) {
+    clientSendChannel = pusher.subscribe(`${channelName}.${getMessengerId()}`);
+    clientListenChannel = pusher.subscribe(`${channelName}.${auth_id}`);
   }
 }
-if (pusher) {
-  initClientChannel();
-}
+initClientChannel();
 
-// HTTP Polling for real-time updates (when WebSocket is not available)
-let pollingInterval = null;
-let lastMessageId = 0;
-let currentPollingContact = 0;
-
-function startPolling() {
-  if (!chatify.pollingEnabled) return;
-  
-  // Clear existing interval
-  if (pollingInterval) {
-    clearInterval(pollingInterval);
-  }
-  
-  // Initialize last message ID from current messages
-  const currentMessages = messagesContainer.find(".messages .message-card");
-  if (currentMessages.length > 0) {
-    const lastMsg = currentMessages.last();
-    const msgId = $(lastMsg).attr('data-id') || $(lastMsg).data('id');
-    if (msgId) {
-      lastMessageId = parseInt(msgId);
-    }
-  }
-  
-  pollingInterval = setInterval(function() {
-    const contactId = getMessengerId();
-    if (contactId && contactId != 0) {
-      // Reset last message ID if contact changed
-      if (currentPollingContact !== contactId) {
-        currentPollingContact = contactId;
-        lastMessageId = 0;
-        // Get current last message ID
-        const currentMessages = messagesContainer.find(".messages .message-card");
-        if (currentMessages.length > 0) {
-          const lastMsg = currentMessages.last();
-          const msgId = $(lastMsg).attr('data-id') || $(lastMsg).data('id');
-          if (msgId) {
-            lastMessageId = parseInt(msgId);
-          }
-        }
-      }
-      
-      // Check for new messages in current conversation
-      $.ajax({
-        url: url + "/fetchMessages",
-        type: "POST",
-        data: { id: contactId, per_page: 10 },
-        headers: {
-          "X-CSRF-TOKEN": csrfToken,
-        },
-        success: function(response) {
-          if (response.messages && response.messages.length > 0) {
-            // Parse HTML messages
-            const $tempDiv = $('<div>').html(response.messages);
-            const $newMessages = $tempDiv.find('.message-card');
-            let foundNew = false;
-            
-            $newMessages.each(function() {
-              const $msg = $(this);
-              const msgId = $msg.attr('data-id') || $msg.data('id');
-              
-              if (msgId && parseInt(msgId) > lastMessageId) {
-                // Check if message already exists
-                if (!$(`.messages .message-card[data-id="${msgId}"], .messages .message-card[data-id='${msgId}']`).length) {
-                  foundNew = true;
-                  messagesContainer.find(".messages").find(".message-hint").remove();
-                  messagesContainer.find(".messages").append($msg);
-                  scrollToBottom(messagesContainer);
-                  
-                  // Update last message ID
-                  lastMessageId = parseInt(msgId);
-                  
-                  // Check if it's from the other user (new message received)
-                  const fromId = $msg.attr('data-from-id') || $msg.data('from-id');
-                  const toId = $msg.attr('data-to-id') || $msg.data('to-id');
-                  if (fromId == contactId && toId == auth_id) {
-                    makeSeen(true);
-                    playNotificationSound("new_message", "default");
-                  }
-                }
-              }
-            });
-            
-            // Update last message ID from response
-            if (response.last_message_id && parseInt(response.last_message_id) > lastMessageId) {
-              lastMessageId = parseInt(response.last_message_id);
-            }
-          } else if (response.messages) {
-            // Response is HTML string, parse it
-            const $tempDiv = $('<div>').html(response.messages);
-            const $newMessages = $tempDiv.find('.message-card');
-            let foundNew = false;
-            
-            $newMessages.each(function() {
-              const $msg = $(this);
-              const msgId = $msg.attr('data-id') || $msg.data('id');
-              
-              if (msgId && parseInt(msgId) > lastMessageId) {
-                if (!$(`.messages .message-card[data-id="${msgId}"], .messages .message-card[data-id='${msgId}']`).length) {
-                  foundNew = true;
-                  messagesContainer.find(".messages").find(".message-hint").remove();
-                  messagesContainer.find(".messages").append($msg);
-                  scrollToBottom(messagesContainer);
-                  lastMessageId = parseInt(msgId);
-                  
-                  const fromId = $msg.attr('data-from-id') || $msg.data('from-id');
-                  const toId = $msg.attr('data-to-id') || $msg.data('to-id');
-                  if (fromId == contactId && toId == auth_id) {
-                    makeSeen(true);
-                    playNotificationSound("new_message", "default");
-                  }
-                }
-              }
-            });
-          }
-        },
-        error: function() {
-          // Silently fail - polling will retry
-        }
-      });
-    }
-  }, chatify.pollingInterval || 3000);
-}
-
-// Start polling if enabled
-if (chatify.pollingEnabled) {
-  startPolling();
-  console.log('HTTP polling started for real-time chat updates.');
-}
-
-// Listen to messages via Pusher (only if Pusher is available)
-if (channel) {
-  channel.bind("messaging", function (data) {
+// Listen to messages, and append if data received
+channel.bind("messaging", function (data) {
   if (data.from_id == getMessengerId() && data.to_id == auth_id) {
     $(".messages").find(".message-hint").remove();
     messagesContainer.find(".messages").append(data.message);
@@ -840,53 +678,51 @@ if (channel) {
   );
 });
 
-// listen to typing indicator (only if Pusher is available)
-if (clientListenChannel) {
-  clientListenChannel.bind("client-typing", function (data) {
-    if (data.from_id == getMessengerId() && data.to_id == auth_id) {
-      data.typing == true
-        ? messagesContainer.find(".typing-indicator").show()
-        : messagesContainer.find(".typing-indicator").hide();
-    }
-    // scroll to bottom
-    scrollToBottom(messagesContainer);
-  });
+// listen to typing indicator
+clientListenChannel.bind("client-typing", function (data) {
+  if (data.from_id == getMessengerId() && data.to_id == auth_id) {
+    data.typing == true
+      ? messagesContainer.find(".typing-indicator").show()
+      : messagesContainer.find(".typing-indicator").hide();
+  }
+  // scroll to bottom
+  scrollToBottom(messagesContainer);
+});
 
-  // listen to seen event
-  clientListenChannel.bind("client-seen", function (data) {
-    if (data.from_id == getMessengerId() && data.to_id == auth_id) {
-      if (data.seen == true) {
-        $(".message-time")
-          .find(".fa-check")
-          .before('<span class="fas fa-check-double seen"></span> ');
-        $(".message-time").find(".fa-check").remove();
-      }
+// listen to seen event
+clientListenChannel.bind("client-seen", function (data) {
+  if (data.from_id == getMessengerId() && data.to_id == auth_id) {
+    if (data.seen == true) {
+      $(".message-time")
+        .find(".fa-check")
+        .before('<span class="fas fa-check-double seen"></span> ');
+      $(".message-time").find(".fa-check").remove();
     }
-  });
+  }
+});
 
-  // listen to contact item updates event
-  clientListenChannel.bind("client-contactItem", function (data) {
-    if (data.to == auth_id) {
-      if (data.update) {
-        updateContactItem(data.from);
-      } else {
-        console.error("Can not update contact item!");
-      }
+// listen to contact item updates event
+clientListenChannel.bind("client-contactItem", function (data) {
+  if (data.to == auth_id) {
+    if (data.update) {
+      updateContactItem(data.from);
+    } else {
+      console.error("Can not update contact item!");
     }
-  });
+  }
+});
 
-  // listen on message delete event
-  clientListenChannel.bind("client-messageDelete", function (data) {
-    $("body").find(`.message-card[data-id=${data.id}]`).remove();
-  });
-  // listen on delete conversation event
-  clientListenChannel.bind("client-deleteConversation", function (data) {
-    if (data.from == getMessengerId() && data.to == auth_id) {
-      $("body").find(`.messages`).html("");
-      $(".messages").find(".message-hint").show();
-    }
-  });
-}
+// listen on message delete event
+clientListenChannel.bind("client-messageDelete", function (data) {
+  $("body").find(`.message-card[data-id=${data.id}]`).remove();
+});
+// listen on delete conversation event
+clientListenChannel.bind("client-deleteConversation", function (data) {
+  if (data.from == getMessengerId() && data.to == auth_id) {
+    $("body").find(`.messages`).html("");
+    $(".messages").find(".message-hint").show();
+  }
+});
 // -------------------------------------
 // presence channel [User Active Status] - DISABLED for Reverb compatibility
 // var activeStatusChannel = pusher.subscribe("presence-activeStatus");
@@ -924,14 +760,11 @@ document.addEventListener("visibilitychange", handleVisibilityChange, false);
  *-------------------------------------------------------------
  */
 function isTyping(status) {
-  if (clientSendChannel) {
-    return clientSendChannel.trigger("client-typing", {
-      from_id: auth_id, // Me
-      to_id: getMessengerId(), // Messenger
-      typing: status,
-    });
-  }
-  return false;
+  return clientSendChannel.trigger("client-typing", {
+    from_id: auth_id, // Me
+    to_id: getMessengerId(), // Messenger
+    typing: status,
+  });
 }
 
 /**
@@ -954,14 +787,11 @@ function makeSeen(status) {
     data: { _token: csrfToken, id: getMessengerId() },
     dataType: "JSON",
   });
-  if (clientSendChannel) {
-    return clientSendChannel.trigger("client-seen", {
-      from_id: auth_id, // Me
-      to_id: getMessengerId(), // Messenger
-      seen: status,
-    });
-  }
-  return false;
+  return clientSendChannel.trigger("client-seen", {
+    from_id: auth_id, // Me
+    to_id: getMessengerId(), // Messenger
+    seen: status,
+  });
 }
 
 /**
@@ -970,14 +800,11 @@ function makeSeen(status) {
  *-------------------------------------------------------------
  */
 function sendContactItemUpdates(status) {
-  if (clientSendChannel) {
-    return clientSendChannel.trigger("client-contactItem", {
-      from: auth_id, // Me
-      to: getMessengerId(), // Messenger
-      update: status,
-    });
-  }
-  return false;
+  return clientSendChannel.trigger("client-contactItem", {
+    from: auth_id, // Me
+    to: getMessengerId(), // Messenger
+    update: status,
+  });
 }
 
 /**
@@ -986,12 +813,9 @@ function sendContactItemUpdates(status) {
  *-------------------------------------------------------------
  */
 function sendMessageDeleteEvent(messageId) {
-  if (clientSendChannel) {
-    return clientSendChannel.trigger("client-messageDelete", {
-      id: messageId,
-    });
-  }
-  return false;
+  return clientSendChannel.trigger("client-messageDelete", {
+    id: messageId,
+  });
 }
 /**
  *-------------------------------------------------------------
@@ -999,13 +823,10 @@ function sendMessageDeleteEvent(messageId) {
  *-------------------------------------------------------------
  */
 function sendDeleteConversationEvent() {
-  if (clientSendChannel) {
-    return clientSendChannel.trigger("client-deleteConversation", {
-      from: auth_id,
-      to: getMessengerId(),
-    });
-  }
-  return false;
+  return clientSendChannel.trigger("client-deleteConversation", {
+    from: auth_id,
+    to: getMessengerId(),
+  });
 }
 
 /**
@@ -1473,34 +1294,25 @@ $(document).ready(function () {
   // make message input autosize.
   autosize($(".m-send"));
 
-  // check if pusher has access to the channel [Internet status] (only if Pusher is available)
-  if (pusher && pusher.connection) {
-    pusher.connection.bind("state_change", function (states) {
-      let selector = $(".internet-connection");
-      checkInternet(states.current, selector);
-      // listening for pusher:subscription_succeeded
-      if (channel) {
-        channel.bind("pusher:subscription_succeeded", function () {
-          // On connection state change [Updating] and get [info & msgs]
-          if (getMessengerId() != 0) {
-            if (
-              $(".messenger-list-item")
-                .find("tr[data-action]")
-                .attr("data-action") == "1"
-            ) {
-              $(".messenger-listView").hide();
-            }
-            IDinfo(getMessengerId());
-          }
-        });
+  // check if pusher has access to the channel [Internet status]
+  pusher.connection.bind("state_change", function (states) {
+    let selector = $(".internet-connection");
+    checkInternet(states.current, selector);
+    // listening for pusher:subscription_succeeded
+    channel.bind("pusher:subscription_succeeded", function () {
+      // On connection state change [Updating] and get [info & msgs]
+      if (getMessengerId() != 0) {
+        if (
+          $(".messenger-list-item")
+            .find("tr[data-action]")
+            .attr("data-action") == "1"
+        ) {
+          $(".messenger-listView").hide();
+        }
+        IDinfo(getMessengerId());
       }
     });
-  } else {
-    // If no Pusher, initialize chat immediately with polling
-    if (getMessengerId() != 0) {
-      IDinfo(getMessengerId());
-    }
-  }
+  });
 
   // tabs on click, show/hide...
   $(".messenger-listView-tabs a").on("click", function () {
@@ -1835,14 +1647,7 @@ let previousMessengerId = getMessengerId();
 const observer = new MutationObserver(function (mutations) {
   if (getMessengerId() !== previousMessengerId) {
     previousMessengerId = getMessengerId();
-    // Re-initialize client channel if Pusher is available, or restart polling
-    if (pusher) {
-      initClientChannel();
-    }
-    // Restart polling with new contact ID
-    if (chatify.pollingEnabled && pollingInterval) {
-      lastMessageId = 0; // Reset to get all messages for new contact
-    }
+    initClientChannel();
   }
 });
 const config = { subtree: true, childList: true };
