@@ -182,27 +182,33 @@ class ProfileController extends Controller
 
             // Always save as JPEG for consistency
             $filename = 'avatar_'.$user->id.'_'.time().'.jpg';
+            $path = public_path('avatars/' . $filename);
 
             try {
+                // Create the directory if it doesn't exist
+                if (!file_exists(public_path('avatars'))) {
+                    mkdir(public_path('avatars'), 0755, true);
+                }
+
                 $manager = new ImageManager(new Driver);
 
                 // Read & crop-cover the image to a square, then resize to 400x400
                 $image = $manager->read($avatar->getPathname());
-                // Use cover to maintain aspect ratio and fill the square
                 $image = $image->cover(400, 400);
 
-                // Encode to JPEG (quality 85)
-                $imageContent = $image->toJpeg(85)->toString();
+                // Save to the public path
+                $image->toJpeg(85)->save($path);
 
                 // Delete old avatar if exists
-                if ($user->avatar && Storage::disk('public')->exists('avatars/'.basename($user->avatar))) {
-                    Storage::disk('public')->delete('avatars/'.basename($user->avatar));
+                if ($user->avatar) {
+                    $oldAvatarPath = public_path(parse_url($user->avatar, PHP_URL_PATH));
+                    if (file_exists($oldAvatarPath)) {
+                        unlink($oldAvatarPath);
+                    }
                 }
 
-                // Store the processed image
-                Storage::disk('public')->put('avatars/'.$filename, $imageContent);
-
-                $userData['avatar'] = '/storage/avatars/'.$filename;
+                // Set the web-accessible path
+                $userData['avatar'] = '/avatars/'.$filename;
             } catch (\Throwable $e) {
                 \Log::error('Avatar upload failed', [
                     'error' => $e->getMessage(),

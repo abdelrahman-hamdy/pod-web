@@ -7,7 +7,7 @@
         
         <!-- Logo (clickable, floated left on mobile) -->
         <a href="{{ route('home') }}" class="flex items-center space-x-3 hover:opacity-80 transition-opacity">
-            <img src="{{ asset('storage/assets/pod-logo.png') }}" alt="People Of Data" class="w-8" />
+            <img src="{{ asset('assets/pod-logo.png') }}" alt="People Of Data" class="w-8" />
             <span class="text-xl font-semibold text-slate-800 md:block hidden">People Of Data</span>
         </a>
         
