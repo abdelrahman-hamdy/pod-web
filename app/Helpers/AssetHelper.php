@@ -10,11 +10,23 @@ class AssetHelper
      * Get the URL for a static asset (logos, icons, images in public/assets/)
      * 
      * @param string $path Path relative to public/assets/
+     * @param bool $bustCache Whether to add cache-busting version parameter
      * @return string Full URL to the asset
      */
-    public static function staticAsset(string $path): string
+    public static function staticAsset(string $path, bool $bustCache = true): string
     {
-        return asset('assets/' . ltrim($path, '/'));
+        $url = asset('assets/' . ltrim($path, '/'));
+        
+        // Add cache-busting version parameter
+        if ($bustCache) {
+            $fullPath = public_path('assets/' . ltrim($path, '/'));
+            if (file_exists($fullPath)) {
+                $version = filemtime($fullPath);
+                $url .= '?v=' . $version;
+            }
+        }
+        
+        return $url;
     }
 
     /**

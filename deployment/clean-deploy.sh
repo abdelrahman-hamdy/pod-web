@@ -124,12 +124,25 @@ chmod -R 775 storage bootstrap/cache 2>/dev/null || true
 echo -e "${GREEN}✓ Permissions set${NC}"
 echo ""
 
+# Step 9: Force browser cache refresh
+echo "🔄 Step 9: Forcing browser cache refresh..."
+CACHE_BUST=$(date +%s)
+echo "ASSET_VERSION=$CACHE_BUST" >> .env
+php artisan config:clear > /dev/null 2>&1
+echo -e "${GREEN}✓ Asset version updated to $CACHE_BUST${NC}"
+echo ""
+
 # Final summary
 echo "════════════════════════════════════════════════"
 if [ $ERRORS -eq 0 ]; then
     echo -e "${GREEN}✅ Deployment completed successfully!${NC}"
     echo ""
     echo "Your site should now match your local repository exactly."
+    echo ""
+    echo -e "${YELLOW}⚠️  IMPORTANT: Clear your browser cache!${NC}"
+    echo "   Windows/Linux: Ctrl+Shift+R or Ctrl+F5"
+    echo "   Mac: Cmd+Shift+R"
+    echo ""
     echo "Visit your domain to verify."
 else
     echo -e "${RED}⚠️  Deployment completed with $ERRORS error(s)${NC}"
