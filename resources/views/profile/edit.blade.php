@@ -20,7 +20,7 @@
             </div>
         @endif
 
-        <form action="{{ route('profile.update') }}" method="POST" enctype="multipart/form-data" class="space-y-8">
+        <form action="{{ route('profile.update') }}" method="POST" enctype="multipart/form-data" class="space-y-8" id="profile-edit-form">
             @csrf
             @method('PUT')
 
@@ -38,7 +38,7 @@
                                     <x-avatar 
                                         :src="$user->avatar ?? null"
                                         :name="$user->name ?? 'User'"
-                                        size="lg"
+                                        size="xl"
                                         class="w-full h-full"
                                         :color="$user->avatar_color ?? null" />
                                 </div>
@@ -370,34 +370,17 @@
         }
 
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('Profile edit page loaded');
-            
             const avatarUpload = document.getElementById('avatar-upload');
             const avatarPreview = document.getElementById('avatar-preview');
             const previewImg = document.getElementById('preview-img');
             const removeAvatarBtn = document.getElementById('remove-avatar');
             const originalAvatar = document.getElementById('original-avatar');
 
-            console.log('Elements found:', {
-                avatarUpload: !!avatarUpload,
-                avatarPreview: !!avatarPreview,
-                previewImg: !!previewImg,
-                removeAvatarBtn: !!removeAvatarBtn,
-                originalAvatar: !!originalAvatar
-            });
-
             // Avatar upload preview
             if (avatarUpload) {
                 avatarUpload.addEventListener('change', function(e) {
-                    console.log('Avatar file selected');
                     const file = e.target.files[0];
                     if (file) {
-                        console.log('File details:', {
-                            name: file.name,
-                            size: file.size,
-                            type: file.type
-                        });
-
                         // Validate file size (2MB max)
                         if (file.size > 2 * 1024 * 1024) {
                             alert('File size must be less than 2MB');
@@ -436,7 +419,6 @@
             // Remove avatar
             if (removeAvatarBtn) {
                 removeAvatarBtn.addEventListener('click', function() {
-                    console.log('Remove avatar clicked');
                     if (avatarUpload) {
                         avatarUpload.value = '';
                     }
@@ -453,81 +435,18 @@
                 });
             }
 
-            // Form validation
-            const form = document.querySelector('form');
-            if (form) {
-                console.log('Form found, adding submit listener');
-                form.addEventListener('submit', function(e) {
-                    console.log('Form submitted');
-                    const firstName = form.querySelector('[name="first_name"]');
-                    const lastName = form.querySelector('[name="last_name"]');
-                    const email = form.querySelector('[name="email"]');
-                    
-                    console.log('Form fields:', {
-                        firstName: firstName ? firstName.value : 'not found',
-                        lastName: lastName ? lastName.value : 'not found',
-                        email: email ? email.value : 'not found'
-                    });
-                    
-                    if (!firstName || !lastName || !email) {
-                        console.log('Missing required fields');
-                        e.preventDefault();
-                        alert('Please fill in all required fields.');
-                        return;
-                    }
-                    
-                    if (!firstName.value.trim() || !lastName.value.trim() || !email.value.trim()) {
-                        console.log('Empty required fields');
-                        e.preventDefault();
-                        alert('Please fill in all required fields.');
-                        return;
-                    }
-                    
-                    // Validate password fields if any password field is filled
-                    const currentPassword = form.querySelector('[name="current_password"]');
-                    const newPassword = form.querySelector('[name="password"]');
-                    const confirmPassword = form.querySelector('[name="password_confirmation"]');
-                    
-                    if (currentPassword && newPassword && confirmPassword) {
-                        const hasCurrentPassword = currentPassword.value.trim() !== '';
-                        const hasNewPassword = newPassword.value.trim() !== '';
-                        const hasConfirmPassword = confirmPassword.value.trim() !== '';
-                        
-                        if (hasCurrentPassword || hasNewPassword || hasConfirmPassword) {
-                            // If any password field is filled, all must be filled
-                            if (!hasCurrentPassword || !hasNewPassword || !hasConfirmPassword) {
-                                e.preventDefault();
-                                alert('Please fill in all password fields to change your password.');
-                                return;
-                            }
-                            
-                            // Validate password length
-                            if (newPassword.value.length < 8) {
-                                e.preventDefault();
-                                alert('New password must be at least 8 characters long.');
-                                return;
-                            }
-                            
-                            // Validate password match
-                            if (newPassword.value !== confirmPassword.value) {
-                                e.preventDefault();
-                                alert('New password and confirmation do not match.');
-                                return;
-                            }
-                        }
-                    }
-                    
-                    console.log('Form validation passed, submitting...');
-                    
-                    // Show loading state
-                    const submitButton = form.querySelector('button[type="submit"]');
+            // Only handle the profile edit form - not other forms on the page
+            const profileForm = document.getElementById('profile-edit-form');
+            if (profileForm) {
+                profileForm.addEventListener('submit', function(e) {
+                    // Show loading state only
+                    const submitButton = profileForm.querySelector('button[type="submit"]');
                     if (submitButton) {
                         submitButton.disabled = true;
                         submitButton.innerHTML = '<i class="ri-loader-line animate-spin"></i> Saving...';
                     }
+                    // Let the form submit naturally - validation happens on the server
                 });
-            } else {
-                console.log('Form not found!');
             }
         });
     </script>
