@@ -694,6 +694,7 @@ if (pusher) {
 // HTTP Polling for real-time updates (when WebSocket is not available)
 let pollingInterval = null;
 let lastMessageId = 0;
+let currentPollingContact = 0;
 
 function startPolling() {
   if (!chatify.pollingEnabled) return;
@@ -703,41 +704,68 @@ function startPolling() {
     clearInterval(pollingInterval);
   }
   
+  // Initialize last message ID from current messages
+  const currentMessages = messagesContainer.find(".messages .message-card");
+  if (currentMessages.length > 0) {
+    const lastMsg = currentMessages.last();
+    const msgId = $(lastMsg).attr('data-id') || $(lastMsg).data('id');
+    if (msgId) {
+      lastMessageId = parseInt(msgId);
+    }
+  }
+  
   pollingInterval = setInterval(function() {
-    if (getMessengerId() && getMessengerId() != 0) {
+    const contactId = getMessengerId();
+    if (contactId && contactId != 0) {
+      // Reset last message ID if contact changed
+      if (currentPollingContact !== contactId) {
+        currentPollingContact = contactId;
+        lastMessageId = 0;
+        // Get current last message ID
+        const currentMessages = messagesContainer.find(".messages .message-card");
+        if (currentMessages.length > 0) {
+          const lastMsg = currentMessages.last();
+          const msgId = $(lastMsg).attr('data-id') || $(lastMsg).data('id');
+          if (msgId) {
+            lastMessageId = parseInt(msgId);
+          }
+        }
+      }
+      
       // Check for new messages in current conversation
       $.ajax({
         url: url + "/fetchMessages",
         type: "POST",
-        data: { id: getMessengerId() },
+        data: { id: contactId, per_page: 10 },
         headers: {
           "X-CSRF-TOKEN": csrfToken,
         },
         success: function(response) {
-          if (response.messages) {
-            // Parse messages and append new ones
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(response.messages, 'text/html');
-            const messages = doc.querySelectorAll('.message-card');
+          if (response.messages && response.messages.length > 0) {
+            // Parse HTML messages
+            const $tempDiv = $('<div>').html(response.messages);
+            const $newMessages = $tempDiv.find('.message-card');
+            let foundNew = false;
             
-            messages.forEach(function(msg) {
-              const msgId = msg.getAttribute('data-id');
+            $newMessages.each(function() {
+              const $msg = $(this);
+              const msgId = $msg.attr('data-id') || $msg.data('id');
+              
               if (msgId && parseInt(msgId) > lastMessageId) {
-                // New message found
-                if (!$(`.messages .message-card[data-id="${msgId}"]`).length) {
+                // Check if message already exists
+                if (!$(`.messages .message-card[data-id="${msgId}"], .messages .message-card[data-id='${msgId}']`).length) {
+                  foundNew = true;
                   messagesContainer.find(".messages").find(".message-hint").remove();
-                  messagesContainer.find(".messages").append(msg.outerHTML);
+                  messagesContainer.find(".messages").append($msg);
                   scrollToBottom(messagesContainer);
                   
                   // Update last message ID
-                  if (parseInt(msgId) > lastMessageId) {
-                    lastMessageId = parseInt(msgId);
-                  }
+                  lastMessageId = parseInt(msgId);
                   
-                  // Check if it's from the other user
-                  const fromId = msg.getAttribute('data-from-id');
-                  const toId = msg.getAttribute('data-to-id');
-                  if (fromId == getMessengerId() && toId == auth_id) {
+                  // Check if it's from the other user (new message received)
+                  const fromId = $msg.attr('data-from-id') || $msg.data('from-id');
+                  const toId = $msg.attr('data-to-id') || $msg.data('to-id');
+                  if (fromId == contactId && toId == auth_id) {
                     makeSeen(true);
                     playNotificationSound("new_message", "default");
                   }
@@ -745,14 +773,37 @@ function startPolling() {
               }
             });
             
-            // Update last message ID if we have messages
-            if (messages.length > 0) {
-              const lastMsg = messages[messages.length - 1];
-              const lastMsgId = lastMsg.getAttribute('data-id');
-              if (lastMsgId) {
-                lastMessageId = parseInt(lastMsgId);
-              }
+            // Update last message ID from response
+            if (response.last_message_id && parseInt(response.last_message_id) > lastMessageId) {
+              lastMessageId = parseInt(response.last_message_id);
             }
+          } else if (response.messages) {
+            // Response is HTML string, parse it
+            const $tempDiv = $('<div>').html(response.messages);
+            const $newMessages = $tempDiv.find('.message-card');
+            let foundNew = false;
+            
+            $newMessages.each(function() {
+              const $msg = $(this);
+              const msgId = $msg.attr('data-id') || $msg.data('id');
+              
+              if (msgId && parseInt(msgId) > lastMessageId) {
+                if (!$(`.messages .message-card[data-id="${msgId}"], .messages .message-card[data-id='${msgId}']`).length) {
+                  foundNew = true;
+                  messagesContainer.find(".messages").find(".message-hint").remove();
+                  messagesContainer.find(".messages").append($msg);
+                  scrollToBottom(messagesContainer);
+                  lastMessageId = parseInt(msgId);
+                  
+                  const fromId = $msg.attr('data-from-id') || $msg.data('from-id');
+                  const toId = $msg.attr('data-to-id') || $msg.data('to-id');
+                  if (fromId == contactId && toId == auth_id) {
+                    makeSeen(true);
+                    playNotificationSound("new_message", "default");
+                  }
+                }
+              }
+            });
           }
         },
         error: function() {
