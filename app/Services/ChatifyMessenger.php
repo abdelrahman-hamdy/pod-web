@@ -334,7 +334,18 @@ class ChatifyMessenger
      */
     public function push($channel, $event, $data)
     {
-        $this->pusher->trigger($channel, $event, $data);
+        // Check if broadcasting is enabled
+        if (config('broadcasting.default') === 'null' || config('broadcasting.default') === null) {
+            // Broadcasting is disabled, skip silently
+            return;
+        }
+
+        try {
+            $this->pusher->trigger($channel, $event, $data);
+        } catch (\Exception $e) {
+            // Silently fail - allows graceful degradation when Reverb is not running
+            \Log::info('Broadcasting skipped (Reverb not available): '.$e->getMessage());
+        }
     }
 
     /**

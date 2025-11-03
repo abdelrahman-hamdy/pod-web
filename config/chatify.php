@@ -44,12 +44,12 @@ return [
         'secret' => env('REVERB_APP_SECRET', 'local-secret'),
         'app_id' => env('REVERB_APP_ID', 'local-app-id'),
         'options' => [
-            'host' => env('REVERB_HOST', '127.0.0.1'),
+            'host' => env('REVERB_HOST') ?: parse_url(env('APP_URL', 'http://localhost'), PHP_URL_HOST) ?: '127.0.0.1',
             'port' => env('REVERB_PORT', 8080),
             'scheme' => env('REVERB_SCHEME', 'http'),
-            'encrypted' => false,
-            'useTLS' => false,
-            'enabled' => true,
+            'encrypted' => env('REVERB_SCHEME', 'http') === 'https',
+            'useTLS' => env('REVERB_SCHEME', 'http') === 'https',
+            'enabled' => env('BROADCAST_CONNECTION') !== 'null',
         ],
     ],
 

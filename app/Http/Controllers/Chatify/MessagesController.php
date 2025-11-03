@@ -10,7 +10,6 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Str;
 
@@ -139,6 +138,8 @@ class MessagesController extends Controller
                 ]) : null,
             ]);
             $messageData = Chatify::parseMessage($message);
+
+            // Try to broadcast, but don't fail if Reverb is not available
             if (Auth::user()->id != $request['id']) {
                 Chatify::push('private-chatify.'.$request['id'], 'messaging', [
                     'from_id' => Auth::user()->id,
@@ -220,37 +221,73 @@ class MessagesController extends Controller
      */
     public function getContacts(Request $request)
     {
-        // get all users that received/sent message from/to [Auth user]
-        $users = Message::join('users', function ($join) {
-            $join->on('ch_messages.from_id', '=', 'users.id')
-                ->orOn('ch_messages.to_id', '=', 'users.id');
-        })
-            ->where(function ($q) {
-                $q->where('ch_messages.from_id', Auth::user()->id)
-                    ->orWhere('ch_messages.to_id', Auth::user()->id);
-            })
-            ->where('users.id', '!=', Auth::user()->id)
-            ->select('users.*', DB::raw('MAX(ch_messages.created_at) max_created_at'))
-            ->orderBy('max_created_at', 'desc')
-            ->groupBy('users.id')
-            ->paginate($request->per_page ?? $this->perPage);
+        try {
+            // Get user IDs that have conversations with current user (avoid GROUP BY strict mode issues)
+            $fromIds = Message::where('to_id', Auth::user()->id)->distinct()->pluck('from_id');
+            $toIds = Message::where('from_id', Auth::user()->id)->distinct()->pluck('to_id');
+            $userIds = $fromIds->merge($toIds)->unique()->filter(function ($id) {
+                return $id != Auth::user()->id;
+            })->values()->toArray();
 
-        $usersList = $users->items();
-
-        if (count($usersList) > 0) {
-            $contacts = '';
-            foreach ($usersList as $user) {
-                $contacts .= Chatify::getContactItem($user);
+            if (empty($userIds)) {
+                return Response::json([
+                    'contacts' => '<div class="flex items-center justify-center py-12 px-4"><p class="text-center text-slate-500 text-sm">Your contact list is empty</p></div>',
+                    'total' => 0,
+                    'last_page' => 1,
+                ], 200);
             }
-        } else {
-            $contacts = '<div class="flex items-center justify-center py-12 px-4"><p class="text-center text-slate-500 text-sm">Your contact list is empty</p></div>';
-        }
 
-        return Response::json([
-            'contacts' => $contacts,
-            'total' => $users->total() ?? 0,
-            'last_page' => $users->lastPage() ?? 1,
-        ], 200);
+            // Get users and their latest message time
+            $users = User::whereIn('id', $userIds)->get()->map(function ($user) {
+                $latestMessage = Message::where(function ($q) use ($user) {
+                    $q->where(function ($query) use ($user) {
+                        $query->where('from_id', Auth::user()->id)
+                            ->where('to_id', $user->id);
+                    })->orWhere(function ($query) use ($user) {
+                        $query->where('from_id', $user->id)
+                            ->where('to_id', Auth::user()->id);
+                    });
+                })->latest('created_at')->first();
+
+                $user->max_created_at = $latestMessage ? $latestMessage->created_at : now();
+
+                return $user;
+            })->sortByDesc('max_created_at')->values();
+
+            // Manual pagination
+            $page = (int) ($request->input('page', 1));
+            $perPage = (int) ($request->per_page ?? $this->perPage);
+            $total = $users->count();
+            $lastPage = (int) ceil($total / $perPage);
+            $items = $users->forPage($page, $perPage);
+
+            // Generate contacts HTML
+            if ($items->count() > 0) {
+                $contacts = '';
+                foreach ($items as $user) {
+                    $contacts .= Chatify::getContactItem($user);
+                }
+            } else {
+                $contacts = '<div class="flex items-center justify-center py-12 px-4"><p class="text-center text-slate-500 text-sm">Your contact list is empty</p></div>';
+            }
+
+            return Response::json([
+                'contacts' => $contacts,
+                'total' => $total,
+                'last_page' => $lastPage,
+            ], 200);
+        } catch (\Exception $e) {
+            \Log::error('getContacts error', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return Response::json([
+                'contacts' => '<div class="flex items-center justify-center py-12 px-4"><p class="text-center text-red-500 text-sm">Error loading contacts. Please refresh the page.</p></div>',
+                'total' => 0,
+                'last_page' => 1,
+            ], 500);
+        }
     }
 
     /**
