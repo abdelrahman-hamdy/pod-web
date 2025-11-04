@@ -127,7 +127,47 @@ class PostController extends BaseApiController
         $validated = $request->validate([
             'content' => 'nullable|string|max:5000',
             'is_published' => 'nullable|boolean',
+            'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048',
+            'removed_images' => 'nullable|array',
+            'removed_images.*' => 'string',
         ]);
+
+        // Handle removed images
+        if (! empty($validated['removed_images'])) {
+            $currentImages = $post->images ?? [];
+            foreach ($validated['removed_images'] as $removedImage) {
+                // Remove from storage
+                if (\Illuminate\Support\Facades\Storage::disk('public')->exists($removedImage)) {
+                    \Illuminate\Support\Facades\Storage::disk('public')->delete($removedImage);
+                }
+                // Remove from array
+                $currentImages = array_values(array_filter($currentImages, fn ($img) => $img !== $removedImage));
+            }
+            $validated['images'] = $currentImages;
+        }
+
+        // Handle new image uploads
+        if ($request->hasFile('images')) {
+            $currentImages = $post->images ?? [];
+            foreach ($request->file('images') as $image) {
+                $path = $image->store('posts', 'public');
+                $currentImages[] = $path;
+            }
+            $validated['images'] = $currentImages;
+            
+            // Update type to image if images exist
+            if (! empty($currentImages)) {
+                $validated['type'] = 'image';
+            }
+        }
+
+        // Update content formatting
+        if (! empty($validated['content'])) {
+            $validated['content'] = $this->formatContent($validated['content']);
+        }
+
+        // Remove helper fields from update
+        unset($validated['removed_images']);
 
         $post->update($validated);
 
