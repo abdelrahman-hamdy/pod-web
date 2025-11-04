@@ -35,9 +35,9 @@ Route::prefix('v1')->group(function () {
         Route::post('/auth/forgot-password', [AuthController::class, 'forgotPassword'])->middleware('throttle:3,1');
         Route::post('/auth/reset-password', [AuthController::class, 'resetPassword'])->middleware('throttle:3,1');
 
-        // Public Resources (Limited)
-        Route::get('/posts', [PostController::class, 'index']);
-        Route::get('/posts/{post}', [PostController::class, 'show']);
+        // Public Resources (Limited) - with optional auth for personalized features
+        Route::get('/posts', [PostController::class, 'index'])->middleware('auth:sanctum');
+        Route::get('/posts/{post}', [PostController::class, 'show'])->middleware('auth:sanctum');
         Route::get('/events', [EventController::class, 'index']);
         Route::get('/events/{event}', [EventController::class, 'show']);
         Route::get('/jobs', [JobListingController::class, 'index']);

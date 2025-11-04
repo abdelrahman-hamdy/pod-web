@@ -21,7 +21,10 @@ class CommentController extends BaseApiController
             ->latest()
             ->paginate($request->get('per_page', 20));
 
-        return $this->paginatedResponse($comments);
+        // Transform using CommentResource to include can_edit field with request context
+        $transformedData = $comments->getCollection()->map(fn ($comment) => (new CommentResource($comment))->toArray($request));
+
+        return $this->paginatedResponse($comments, null, null, $transformedData);
     }
 
     /**

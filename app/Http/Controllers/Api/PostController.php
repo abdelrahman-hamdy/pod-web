@@ -28,7 +28,10 @@ class PostController extends BaseApiController
 
         $posts = $query->paginate($request->get('per_page', 15));
 
-        return $this->paginatedResponse($posts);
+        // Transform using PostResource to include is_liked, is_bookmarked, etc.
+        $transformedData = $posts->getCollection()->map(fn ($post) => (new PostResource($post))->toArray($request));
+
+        return $this->paginatedResponse($posts, null, null, $transformedData);
     }
 
     /**
@@ -191,7 +194,9 @@ class PostController extends BaseApiController
 
         $post->increment('shares_count');
 
-        return $this->successResponse(null, 'Post shared successfully');
+        return $this->successResponse([
+            'shares_count' => $post->fresh()->shares_count,
+        ], 'Post shared successfully');
     }
 
     /**

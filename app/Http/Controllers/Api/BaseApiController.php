@@ -30,11 +30,16 @@ class BaseApiController extends Controller
     /**
      * Return a successful paginated JSON response.
      */
-    protected function paginatedResponse($paginator, ?string $message = null): JsonResponse
+    protected function paginatedResponse($paginator, ?string $message = null, ?string $resourceClass = null, $transformedData = null): JsonResponse
     {
+        $items = $transformedData
+            ?? ($resourceClass
+                ? $resourceClass::collection($paginator->getCollection())
+                : $paginator->items());
+
         $response = [
             'success' => true,
-            'data' => $paginator->items(),
+            'data' => $items,
             'meta' => [
                 'current_page' => $paginator->currentPage(),
                 'from' => $paginator->firstItem(),
