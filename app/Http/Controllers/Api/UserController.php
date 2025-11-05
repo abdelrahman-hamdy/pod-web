@@ -112,7 +112,7 @@ class UserController extends BaseApiController
     /**
      * Get user's posts.
      */
-    public function posts(User $user): JsonResponse
+    public function posts(User $user, Request $request): JsonResponse
     {
         if (! $user->is_active) {
             return $this->notFoundResponse();
@@ -123,7 +123,10 @@ class UserController extends BaseApiController
             ->latest()
             ->paginate(20);
 
-        return $this->paginatedResponse($posts);
+        // Transform using PostResource to include is_liked, is_bookmarked, etc.
+        $transformedData = $posts->getCollection()->map(fn ($post) => (new \App\Http\Resources\PostResource($post))->toArray($request));
+
+        return $this->paginatedResponse($posts, null, null, $transformedData);
     }
 
     /**
