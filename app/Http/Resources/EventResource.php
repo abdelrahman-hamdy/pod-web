@@ -27,7 +27,7 @@ class EventResource extends JsonResource
             'max_attendees' => $this->max_attendees,
             'current_attendees' => $this->when(isset($this->registrations_count), $this->registrations_count ?? 0),
             'agenda' => $this->agenda,
-            'banner_image' => $this->banner_image ? asset('storage/'.$this->banner_image) : null,
+            'banner_image' => $this->banner_image ? url('storage/'.$this->banner_image) : null,
             'registration_deadline' => $this->registration_deadline?->toISOString(),
             'chat_opens_at' => $this->chat_opens_at?->toISOString(),
             'waitlist_enabled' => $this->waitlist_enabled,

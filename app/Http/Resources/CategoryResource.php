@@ -19,6 +19,8 @@ class CategoryResource extends JsonResource
             'name' => $this->name,
             'slug' => $this->slug,
             'description' => $this->description,
+            'color' => $this->color ?? '#3B82F6', // Default blue color
+            'is_active' => $this->is_active ?? true,
         ];
     }
 }
