@@ -171,7 +171,34 @@ class EventController extends BaseApiController
      */
     public function register(Request $request, Event $event): JsonResponse
     {
-        if (! $event->canUserRegister($request->user())) {
+        $user = $request->user();
+        
+        // Check if event is active
+        if (! $event->is_active) {
+            return $this->errorResponse('This event is not active', null, 400);
+        }
+        
+        // Check if registration deadline has passed
+        if ($event->registration_deadline && $event->registration_deadline->isPast()) {
+            return $this->errorResponse('Registration deadline has passed', null, 400);
+        }
+        
+        // Check if event has started
+        if ($event->start_date->isPast()) {
+            return $this->errorResponse('This event has already started', null, 400);
+        }
+        
+        // Check if user is already registered
+        if ($event->registrations()->where('user_id', $user->id)->exists()) {
+            return $this->errorResponse('You are already registered for this event', null, 400);
+        }
+        
+        // Check if event is full
+        if ($event->isFull() && ! $event->waitlist_enabled) {
+            return $this->errorResponse('This event is full', null, 400);
+        }
+        
+        if (! $event->canUserRegister($user)) {
             return $this->errorResponse('You cannot register for this event', null, 400);
         }
 
