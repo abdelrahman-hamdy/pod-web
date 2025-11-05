@@ -87,6 +87,10 @@ Route::prefix('v1')->group(function () {
         Route::put('/profile/portfolios/{portfolio}', [ProfileController::class, 'updatePortfolio']);
         Route::delete('/profile/portfolios/{portfolio}', [ProfileController::class, 'deletePortfolio']);
 
+        // Business Account Requests
+        Route::get('/profile/business-request/status', [App\Http\Controllers\Api\ClientConversionController::class, 'getStatus']);
+        Route::post('/profile/business-request', [App\Http\Controllers\Api\ClientConversionController::class, 'submit']);
+
         // Posts
         Route::post('/posts', [PostController::class, 'store']);
         Route::put('/posts/{post}', [PostController::class, 'update']);
