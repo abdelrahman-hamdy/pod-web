@@ -37,6 +37,22 @@ class UserController extends BaseApiController
             return $this->notFoundResponse();
         }
 
+        // Load user with related data including posts, experiences, and portfolios
+        $user->load([
+            'posts' => function ($query) {
+                $query->latest()->limit(50);
+            },
+            'experiences' => function ($query) {
+                $query->orderBy('start_date', 'desc');
+            },
+            'portfolios'
+        ]);
+
+        // Increment profile views if viewing someone else's profile
+        if (auth()->check() && auth()->id() !== $user->id) {
+            $user->increment('profile_views');
+        }
+
         return $this->successResponse(new UserResource($user));
     }
 
@@ -91,5 +107,54 @@ class UserController extends BaseApiController
             ]);
 
         return $this->successResponse(['users' => $users]);
+    }
+    
+    /**
+     * Get user's posts.
+     */
+    public function posts(User $user): JsonResponse
+    {
+        if (! $user->is_active) {
+            return $this->notFoundResponse();
+        }
+
+        $posts = $user->posts()
+            ->with(['user', 'comments'])
+            ->latest()
+            ->paginate(20);
+
+        return $this->paginatedResponse($posts);
+    }
+
+    /**
+     * Get user's experiences.
+     */
+    public function experiences(User $user): JsonResponse
+    {
+        if (! $user->is_active) {
+            return $this->notFoundResponse();
+        }
+
+        $experiences = $user->experiences()
+            ->orderBy('start_date', 'desc')
+            ->get();
+
+        return $this->successResponse(['experiences' => $experiences]);
+    }
+
+    /**
+     * Get user's portfolios.
+     */
+    public function portfolios(User $user): JsonResponse
+    {
+        if (! $user->is_active) {
+            return $this->notFoundResponse();
+        }
+
+        $portfolios = $user->portfolios()
+            ->latest()
+            ->get();
+
+        return $this->successResponse(['portfolios' => $portfolios]);
     }
 }

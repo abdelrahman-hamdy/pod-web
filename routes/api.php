@@ -64,6 +64,9 @@ Route::prefix('v1')->group(function () {
         Route::get('/users', [UserController::class, 'index']);
         Route::get('/users/search', [UserController::class, 'search']);
         Route::get('/users/{user}', [UserController::class, 'show']);
+        Route::get('/users/{user}/posts', [UserController::class, 'posts']);
+        Route::get('/users/{user}/experiences', [UserController::class, 'experiences']);
+        Route::get('/users/{user}/portfolios', [UserController::class, 'portfolios']);
 
         // Profile Management
         Route::get('/profile', [ProfileController::class, 'show']);

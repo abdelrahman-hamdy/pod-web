@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Http\Resources\PostResource;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -41,9 +42,15 @@ class UserResource extends JsonResource
             'profile_completed' => $this->profile_completed,
             'profile_onboarding_seen' => $this->profile_onboarding_seen,
             'is_active' => $this->is_active,
+            'profile_views' => $this->profile_views ?? 0,
+            'birthday' => $this->birthday?->toISOString(),
             'email_verified_at' => $this->email_verified_at?->toISOString(),
             'created_at' => $this->created_at->toISOString(),
             'updated_at' => $this->updated_at->toISOString(),
+            // Include related data when loaded
+            'experiences' => $this->whenLoaded('experiences'),
+            'portfolios' => $this->whenLoaded('portfolios'),
+            'posts' => PostResource::collection($this->whenLoaded('posts')),
         ];
     }
 }
