@@ -111,14 +111,17 @@ class EventController extends BaseApiController
             return $this->notFoundResponse();
         }
 
-        $event->load(['creator', 'category']);
+        // Load all relationships in one call
+        $relationships = ['creator', 'category'];
         
-        // Load current user's registration if authenticated
+        // Add user's registration if authenticated
         if ($request->user()) {
-            $event->load(['registrations' => function ($query) use ($request) {
+            $relationships['registrations'] = function ($query) use ($request) {
                 $query->where('user_id', $request->user()->id);
-            }]);
+            };
         }
+        
+        $event->load($relationships);
 
         return $this->successResponse(new EventResource($event));
     }
