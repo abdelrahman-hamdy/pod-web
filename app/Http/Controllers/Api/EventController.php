@@ -7,6 +7,7 @@ use App\Models\Event;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Laravel\Sanctum\PersonalAccessToken;
 
 class EventController extends BaseApiController
 {
@@ -21,10 +22,13 @@ class EventController extends BaseApiController
             ->active()
             ->latest();
             
+        // Resolve user from request (supports optional bearer token)
+        $currentUser = $this->resolveUser($request);
         // Load current user's registrations if authenticated
-        if ($request->user()) {
-            $query->with(['registrations' => function ($q) use ($request) {
-                $q->where('user_id', $request->user()->id);
+        if ($currentUser) {
+            $query->with(['registrations' => function ($q) use ($currentUser) {
+                $q->where('user_id', $currentUser->id)
+                  ->select('id', 'event_id', 'user_id', 'status');
             }]);
         }
 
@@ -111,7 +115,7 @@ class EventController extends BaseApiController
             return $this->notFoundResponse();
         }
 
-        $user = $request->user();
+        $user = $this->resolveUser($request);
         
         // Debug logging
         \Log::info("EventController@show for event {$event->id}: user=" . ($user ? "ID:{$user->id}" : "NOT_AUTHENTICATED"));
@@ -142,6 +146,30 @@ class EventController extends BaseApiController
         }
 
         return $this->successResponse(new EventResource($event));
+    }
+
+    /**
+     * Attempt to resolve the authenticated user for public routes.
+     * Tries Request->user(), then falls back to Sanctum PersonalAccessToken parsing.
+     */
+    private function resolveUser(Request $request): ?\Illuminate\Contracts\Auth\Authenticatable
+    {
+        if ($request->user()) {
+            return $request->user();
+        }
+
+        $authHeader = $request->header('Authorization');
+        if ($authHeader && str_starts_with($authHeader, 'Bearer ')) {
+            $token = substr($authHeader, 7);
+            if (! empty($token)) {
+                $accessToken = PersonalAccessToken::findToken($token);
+                if ($accessToken) {
+                    return $accessToken->tokenable;
+                }
+            }
+        }
+
+        return null;
     }
 
     /**

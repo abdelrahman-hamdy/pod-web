@@ -4,6 +4,7 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Laravel\Sanctum\PersonalAccessToken;
 
 class EventResource extends JsonResource
 {
@@ -14,7 +15,20 @@ class EventResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        // Resolve user either from request->user() or Sanctum token (for public routes)
         $user = $request->user();
+        if (! $user) {
+            $authHeader = $request->header('Authorization');
+            if ($authHeader && str_starts_with($authHeader, 'Bearer ')) {
+                $token = substr($authHeader, 7);
+                if (! empty($token)) {
+                    $accessToken = PersonalAccessToken::findToken($token);
+                    if ($accessToken) {
+                        $user = $accessToken->tokenable;
+                    }
+                }
+            }
+        }
         
         // Debug logging
         if ($user) {
@@ -22,6 +36,35 @@ class EventResource extends JsonResource
             if ($this->relationLoaded('registrations')) {
                 \Log::info("EventResource for event {$this->id}: registrations_count=" . $this->registrations->count());
                 \Log::info("EventResource for event {$this->id}: registrations=" . $this->registrations->pluck('user_id')->toJson());
+            }
+        }
+
+        // Compute registration flags robustly
+        $isRegistered = false;
+        $registrationStatus = null;
+        if ($this->relationLoaded('registrations')) {
+            // If relation is already filtered by controller, we can trust its content
+            $isRegistered = $this->registrations->isNotEmpty();
+            if ($isRegistered) {
+                $reg = $this->registrations->first();
+                if ($reg) {
+                    $registrationStatus = is_object($reg->status) && method_exists($reg->status, 'value')
+                        ? $reg->status->value
+                        : $reg->status;
+                }
+            }
+        } elseif ($user) {
+            // Relation not loaded: fallback to direct query for safety
+            // Fallback to direct query (avoids wrong UI state if relation wasn't eager loaded)
+            $reg = $this->registrations()
+                ->where('user_id', $user->id)
+                ->select('user_id', 'status')
+                ->first();
+            if ($reg) {
+                $isRegistered = true;
+                $registrationStatus = is_object($reg->status) && method_exists($reg->status, 'value')
+                    ? $reg->status->value
+                    : $reg->status;
             }
         }
 
@@ -41,11 +84,8 @@ class EventResource extends JsonResource
             'chat_opens_at' => $this->chat_opens_at?->toISOString(),
             'waitlist_enabled' => $this->waitlist_enabled,
             'is_active' => $this->is_active,
-            'is_registered' => $user && $this->relationLoaded('registrations') ? $this->registrations->contains('user_id', $user->id) : false,
-            'registration_status' => $user && $this->relationLoaded('registrations') ? (function () use ($user) {
-                $registration = $this->registrations->firstWhere('user_id', $user->id);
-                return $registration ? $registration->status->value : null;
-            })() : null,
+            'is_registered' => $isRegistered,
+            'registration_status' => $registrationStatus,
             'can_edit' => $user ? \Illuminate\Support\Facades\Gate::allows('update', $this->resource) : false,
             'category' => new CategoryResource($this->whenLoaded('category')),
             'creator' => new UserResource($this->whenLoaded('creator')),
