@@ -20,6 +20,13 @@ class EventController extends BaseApiController
         $query = Event::with(['creator', 'category'])
             ->active()
             ->latest();
+            
+        // Load current user's registrations if authenticated
+        if ($request->user()) {
+            $query->with(['registrations' => function ($q) use ($request) {
+                $q->where('user_id', $request->user()->id);
+            }]);
+        }
 
         // Apply filters
         if ($request->filled('category')) {
@@ -98,13 +105,20 @@ class EventController extends BaseApiController
     /**
      * Display the specified event.
      */
-    public function show(Event $event): JsonResponse
+    public function show(Request $request, Event $event): JsonResponse
     {
         if (! $event->is_active && ! $this->canViewInactive($event)) {
             return $this->notFoundResponse();
         }
 
         $event->load(['creator', 'category']);
+        
+        // Load current user's registration if authenticated
+        if ($request->user()) {
+            $event->load(['registrations' => function ($query) use ($request) {
+                $query->where('user_id', $request->user()->id);
+            }]);
+        }
 
         return $this->successResponse(new EventResource($event));
     }
