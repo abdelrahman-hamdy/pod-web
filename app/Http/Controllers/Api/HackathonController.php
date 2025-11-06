@@ -299,6 +299,70 @@ class HackathonController extends BaseApiController
     }
 
     /**
+     * Get available teams (teams that can be joined).
+     */
+    public function availableTeams(Request $request): JsonResponse
+    {
+        $teams = HackathonTeam::whereHas('hackathon', function ($q) {
+            $q->where('start_date', '>', now())
+              ->where('registration_deadline', '>', now());
+        })
+            ->whereDoesntHave('members', function ($q) use ($request) {
+                $q->where('user_id', $request->user()->id);
+            })
+            ->where('leader_id', '!=', $request->user()->id)
+            ->with(['hackathon', 'leader', 'members.user'])
+            ->latest()
+            ->paginate($request->get('per_page', 15));
+
+        return $this->paginatedResponse($teams);
+    }
+
+    /**
+     * Get user's received invitations.
+     */
+    public function receivedInvitations(Request $request): JsonResponse
+    {
+        $invitations = HackathonTeamInvitation::where('invitee_id', $request->user()->id)
+            ->where('status', 'pending')
+            ->with(['team.hackathon', 'team.leader', 'inviter'])
+            ->latest()
+            ->paginate($request->get('per_page', 15));
+
+        return $this->paginatedResponse($invitations);
+    }
+
+    /**
+     * Get user's sent join requests.
+     */
+    public function sentJoinRequests(Request $request): JsonResponse
+    {
+        $requests = HackathonTeamJoinRequest::where('user_id', $request->user()->id)
+            ->where('status', 'pending')
+            ->with(['team.hackathon', 'team.leader'])
+            ->latest()
+            ->paginate($request->get('per_page', 15));
+
+        return $this->paginatedResponse($requests);
+    }
+
+    /**
+     * Get join requests received by user's teams.
+     */
+    public function receivedJoinRequests(Request $request): JsonResponse
+    {
+        $requests = HackathonTeamJoinRequest::whereHas('team', function ($q) use ($request) {
+            $q->where('leader_id', $request->user()->id);
+        })
+            ->where('status', 'pending')
+            ->with(['team.hackathon', 'user'])
+            ->latest()
+            ->paginate($request->get('per_page', 15));
+
+        return $this->paginatedResponse($requests);
+    }
+
+    /**
      * Create a team.
      */
     public function createTeam(Request $request): JsonResponse

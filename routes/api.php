@@ -148,6 +148,10 @@ Route::prefix('v1')->group(function () {
 
         // Hackathon Teams
         Route::get('/hackathons/teams', [HackathonController::class, 'myTeams']);
+        Route::get('/hackathons/teams/available', [HackathonController::class, 'availableTeams']);
+        Route::get('/hackathons/invitations/received', [HackathonController::class, 'receivedInvitations']);
+        Route::get('/hackathons/join-requests/sent', [HackathonController::class, 'sentJoinRequests']);
+        Route::get('/hackathons/join-requests/received', [HackathonController::class, 'receivedJoinRequests']);
         Route::post('/hackathons/teams', [HackathonController::class, 'createTeam']);
         Route::put('/hackathons/teams/{team}', [HackathonController::class, 'updateTeam']);
         Route::delete('/hackathons/teams/{team}', [HackathonController::class, 'deleteTeam']);
