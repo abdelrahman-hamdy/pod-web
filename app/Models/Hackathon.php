@@ -41,6 +41,8 @@ class Hackathon extends Model
             'registration_deadline' => 'datetime',
             'skill_requirements' => SkillLevel::class,
             'technologies' => 'array',
+            'sponsors' => 'array',
+            'prizes' => 'array',
             'is_active' => 'boolean',
             'entry_fee' => 'decimal:2',
             'prize_pool' => 'decimal:2',

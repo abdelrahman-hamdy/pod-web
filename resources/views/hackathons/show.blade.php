@@ -114,7 +114,7 @@
             </div>
 
             <!-- Technologies Tags -->
-            @if($hackathon->technologies && count($hackathon->technologies) > 0)
+            @if($hackathon->technologies && is_array($hackathon->technologies) && count($hackathon->technologies) > 0)
             <div class="flex flex-wrap gap-2 mb-6 pb-6 border-b border-slate-100">
                 @foreach($hackathon->technologies as $tech)
                     <span class="inline-flex items-center px-3 py-1.5 bg-indigo-50 text-indigo-600 rounded-full text-sm font-medium">
