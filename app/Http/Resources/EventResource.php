@@ -33,14 +33,10 @@ class EventResource extends JsonResource
             'waitlist_enabled' => $this->waitlist_enabled,
             'is_active' => $this->is_active,
             'is_registered' => $user && $this->relationLoaded('registrations') ? $this->registrations->contains('user_id', $user->id) : false,
-            'registration_status' => $user && $this->relationLoaded('registrations') ? $this->when(
-                $this->registrations->contains('user_id', $user->id),
-                function () use ($user) {
-                    $registration = $this->registrations->firstWhere('user_id', $user->id);
-
-                    return $registration ? $registration->status->value : null;
-                }
-            ) : null,
+            'registration_status' => $user && $this->relationLoaded('registrations') ? (function () use ($user) {
+                $registration = $this->registrations->firstWhere('user_id', $user->id);
+                return $registration ? $registration->status->value : null;
+            })() : null,
             'can_edit' => $user ? \Illuminate\Support\Facades\Gate::allows('update', $this->resource) : false,
             'category' => new CategoryResource($this->whenLoaded('category')),
             'creator' => new UserResource($this->whenLoaded('creator')),
