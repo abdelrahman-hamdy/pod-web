@@ -62,6 +62,14 @@ class JobListing extends Model
     }
 
     /**
+     * Get the current user's application for this job (for eager loading).
+     */
+    public function userApplication()
+    {
+        return $this->hasOne(JobApplication::class)->where('user_id', auth()->id());
+    }
+
+    /**
      * Get pending applications only.
      */
     public function pendingApplications()

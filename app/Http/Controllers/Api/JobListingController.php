@@ -20,7 +20,15 @@ class JobListingController extends BaseApiController
      */
     public function index(Request $request): JsonResponse
     {
-        $query = JobListing::with(['category', 'poster'])
+        $user = $request->user();
+        
+        // Eager load relationships including user's application if authenticated
+        $with = ['category', 'poster'];
+        if ($user) {
+            $with[] = 'userApplication';
+        }
+        
+        $query = JobListing::with($with)
             ->active()
             ->acceptingApplications()
             ->latest();
@@ -117,9 +125,17 @@ class JobListingController extends BaseApiController
     /**
      * Display the specified job listing.
      */
-    public function show(JobListing $job): JsonResponse
+    public function show(Request $request, JobListing $job): JsonResponse
     {
-        $job->load(['category', 'poster']);
+        $user = $request->user();
+        
+        // Load relationships including user's application if authenticated
+        $with = ['category', 'poster'];
+        if ($user) {
+            $with[] = 'userApplication';
+        }
+        
+        $job->load($with);
 
         return $this->successResponse(new JobListingResource($job));
     }

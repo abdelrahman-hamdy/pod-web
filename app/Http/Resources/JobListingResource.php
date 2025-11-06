@@ -15,6 +15,11 @@ class JobListingResource extends JsonResource
     public function toArray(Request $request): array
     {
         $user = $request->user();
+        
+        // Get user's application if loaded (optimized with eager loading)
+        $userApplication = $user && $this->relationLoaded('userApplication') 
+            ? $this->userApplication 
+            : null;
 
         return [
             'id' => $this->id,
@@ -30,7 +35,9 @@ class JobListingResource extends JsonResource
             'experience_level' => is_object($this->experience_level) && method_exists($this->experience_level, 'value') ? $this->experience_level->value : $this->experience_level,
             'application_deadline' => $this->application_deadline?->toISOString(),
             'status' => $this->status,
-            'has_applied' => $user ? $this->applications()->where('user_id', $user->id)->exists() : false,
+            'has_applied' => $userApplication !== null,
+            'application_status' => $userApplication?->status->value ?? null,
+            'application_date' => $userApplication?->created_at?->toISOString() ?? null,
             'can_edit' => $user ? \Illuminate\Support\Facades\Gate::allows('update', $this->resource) : false,
             'applications_count' => $this->when(
                 $user && ($user->hasAnyRole(['admin', 'superadmin', 'client'])),
