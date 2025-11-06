@@ -1,0 +1,39 @@
+===============================================
+MANUAL SERVER UPDATE INSTRUCTIONS
+===============================================
+
+Upload this file to your server:
+FROM: /Users/abdelrahmanhamdy/web/pod-web/app/Http/Controllers/Api/JobListingController.php
+TO: ~/domains/lightgrey-echidna-227060.hostingersite.com/public_html/app/Http/Controllers/Api/JobListingController.php
+
+Using cPanel File Manager or FTP:
+1. Login to cPanel: https://hpanel.hostinger.com/
+2. Go to File Manager
+3. Navigate to: domains/lightgrey-echidna-227060.hostingersite.com/public_html/app/Http/Controllers/Api/
+4. Upload JobListingController.php (overwrite existing)
+5. Clear cache: Go to Terminal and run:
+   cd ~/domains/lightgrey-echidna-227060.hostingersite.com/public_html
+   php artisan config:clear
+   php artisan route:clear
+   php artisan cache:clear
+
+OR use this SCP command (if SSH works):
+scp -P 65002 app/Http/Controllers/Api/JobListingController.php u799534021@82.25.96.176:domains/lightgrey-echidna-227060.hostingersite.com/public_html/app/Http/Controllers/Api/
+
+Then SSH in and clear cache:
+ssh -p 65002 u799534021@82.25.96.176
+cd domains/lightgrey-echidna-227060.hostingersite.com/public_html
+php artisan config:clear && php artisan route:clear && php artisan cache:clear
+exit
+
+===============================================
+WHAT THIS FIX DOES:
+===============================================
+Makes the backend API return application status correctly.
+After updating, you'll see:
+- has_applied: true
+- application_status: "pending"
+- application_date: "2024-11-06T..."
+
+When you open a job you've applied to.
+===============================================

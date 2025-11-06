@@ -364,11 +364,6 @@ class JobListingController extends Controller
     {
         $user = Auth::user();
 
-        // If user is admin, redirect them (admins shouldn't use this page)
-        if ($user->isAdmin()) {
-            return redirect()->route('jobs.index');
-        }
-
         $query = JobApplication::with(['jobListing:id,title,company_name'])
             ->where('user_id', $user->id)
             ->latest();
@@ -389,11 +384,6 @@ class JobListingController extends Controller
     public function showMyApplication(JobApplication $application)
     {
         $user = Auth::user();
-
-        // If user is admin, redirect them
-        if ($user->isAdmin()) {
-            return redirect()->route('jobs.index');
-        }
 
         // Ensure the application belongs to the current user
         if ($application->user_id !== $user->id) {
