@@ -400,72 +400,64 @@
                 });
             });
 
-            // File upload preview
+            // File upload preview - Keep the original input to preserve the file
             const fileInput = document.getElementById('cover-upload');
+            const uploadArea = fileInput ? fileInput.closest('.border-dashed') : null;
+            let previewDiv = null;
+            
             if (fileInput) {
                 fileInput.addEventListener('change', function(e) {
                     const file = e.target.files[0];
                     if (file) {
                         const reader = new FileReader();
                         reader.onload = function(e) {
-                            const uploadArea = fileInput.closest('.border-dashed');
-                            uploadArea.innerHTML = `
+                            // Remove old preview if exists
+                            if (previewDiv) {
+                                previewDiv.remove();
+                            }
+                            
+                            // Create preview element
+                            previewDiv = document.createElement('div');
+                            previewDiv.className = 'preview-container';
+                            previewDiv.innerHTML = `
                                 <img src="${e.target.result}" alt="Preview" class="w-full h-48 object-cover rounded-lg mb-4" />
                                 <button type="button" onclick="resetFileUpload()" class="text-sm text-red-600 hover:text-red-700">
-                                    Remove Image
+                                    <i class="ri-close-line mr-1"></i> Remove Image
                                 </button>
                             `;
-                            // Re-add the original file input (hidden)
-                            const hiddenInput = document.createElement('input');
-                            hiddenInput.type = 'file';
-                            hiddenInput.name = 'banner_image';
-                            hiddenInput.accept = 'image/*';
-                            hiddenInput.className = 'hidden';
-                            hiddenInput.id = 'cover-upload-hidden';
-                            uploadArea.appendChild(hiddenInput);
+                            
+                            // Hide upload UI but keep the file input
+                            const uploadUI = uploadArea.querySelector('.ri-image-add-line')?.parentElement;
+                            if (uploadUI) {
+                                uploadUI.style.display = 'none';
+                            }
+                            
+                            // Add preview
+                            uploadArea.insertBefore(previewDiv, uploadArea.firstChild);
                         };
                         reader.readAsDataURL(file);
                     }
                 });
             }
 
-// Reset file upload function
+            // Reset file upload function
             window.resetFileUpload = function() {
-                const uploadArea = document.querySelector('.border-dashed');
-                uploadArea.innerHTML = `
-                    <i class="ri-image-add-line text-2xl text-slate-400 mb-4"></i>
-                    <p class="text-slate-600 mb-2">Click to upload or drag and drop</p>
-                    <p class="text-sm text-slate-500">PNG, JPG up to 2MB</p>
-                    <input type="file" 
-                           name="banner_image" 
-                           accept="image/*" 
-                           class="hidden" 
-                           id="cover-upload-reset" />
-                    <label for="cover-upload-reset" class="cursor-pointer">
-                        <div class="mt-4 inline-flex items-center px-4 py-2 border border-slate-300 rounded-lg text-sm text-slate-700 hover:bg-slate-50">
-                            <i class="ri-upload-line mr-2"></i>
-                            Choose File
-                        </div>
-                    </label>
-                `;
-                // Re-attach event listener
-                const newFileInput = document.getElementById('cover-upload-reset');
-                newFileInput.addEventListener('change', function(e) {
-                    const file = e.target.files[0];
-                    if (file) {
-                        const reader = new FileReader();
-                        reader.onload = function(e) {
-                            const uploadArea = newFileInput.closest('.border-dashed');
-                            uploadArea.innerHTML = `
-                                <img src="${e.target.result}" alt="Preview" class="w-full h-48 object-cover rounded-lg mb-4" />
-                                <button type="button" onclick="resetFileUpload()" class="text-sm text-red-600 hover:text-red-700">
-                                    Remove Image
-                                </button>
-                            `;
-                        };
-                        reader.readAsDataURL(file);
-                    }
-                });
+                // Clear the file input
+                if (fileInput) {
+                    fileInput.value = '';
+                }
+                
+                // Remove preview
+                if (previewDiv) {
+                    previewDiv.remove();
+                    previewDiv = null;
+                }
+                
+                // Show upload UI again
+                const uploadUI = uploadArea?.querySelector('.ri-image-add-line')?.parentElement;
+                if (uploadUI) {
+                    uploadUI.style.display = 'block';
+                }
             };
 
             // Location field conditional requirement based on format
