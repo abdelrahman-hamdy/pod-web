@@ -212,21 +212,23 @@
                         </div>
                     @endif
                     
-                    <div class="border-2 border-dashed border-slate-300 rounded-lg p-8 text-center">
-                        <i class="ri-image-add-line text-2xl text-slate-400 mb-4"></i>
-                        <p class="text-slate-600 mb-2">Click to upload or drag and drop</p>
-                        <p class="text-sm text-slate-500">PNG, JPG up to 2MB</p>
+                    <div class="border-2 border-dashed border-slate-300 rounded-lg p-8 text-center" id="upload-container">
+                        <div id="upload-ui">
+                            <i class="ri-image-add-line text-2xl text-slate-400 mb-4"></i>
+                            <p class="text-slate-600 mb-2">Click to upload or drag and drop</p>
+                            <p class="text-sm text-slate-500">PNG, JPG up to 2MB</p>
+                            <label for="cover-upload" class="cursor-pointer">
+                                <div class="mt-4 inline-flex items-center px-4 py-2 border border-slate-300 rounded-lg text-sm text-slate-700 hover:bg-slate-50">
+                                    <i class="ri-upload-line mr-2"></i>
+                                    {{ ($isEdit && $hackathon->banner_image) ? 'Change Banner' : 'Choose Banner' }}
+                                </div>
+                            </label>
+                        </div>
                         <input type="file" 
                                name="banner_image" 
                                accept="image/*" 
                                class="hidden" 
                                id="cover-upload" />
-                        <label for="cover-upload" class="cursor-pointer">
-                            <div class="mt-4 inline-flex items-center px-4 py-2 border border-slate-300 rounded-lg text-sm text-slate-700 hover:bg-slate-50">
-                                <i class="ri-upload-line mr-2"></i>
-                                {{ ($isEdit && $hackathon->banner_image) ? 'Change Banner' : 'Choose Banner' }}
-                            </div>
-                        </label>
                     </div>
                 </div>
             </div>
@@ -402,10 +404,11 @@
 
             // File upload preview - Keep the original input to preserve the file
             const fileInput = document.getElementById('cover-upload');
-            const uploadArea = fileInput ? fileInput.closest('.border-dashed') : null;
+            const uploadContainer = document.getElementById('upload-container');
+            const uploadUI = document.getElementById('upload-ui');
             let previewDiv = null;
             
-            if (fileInput) {
+            if (fileInput && uploadContainer && uploadUI) {
                 fileInput.addEventListener('change', function(e) {
                     const file = e.target.files[0];
                     if (file) {
@@ -418,22 +421,19 @@
                             
                             // Create preview element
                             previewDiv = document.createElement('div');
-                            previewDiv.className = 'preview-container';
+                            previewDiv.id = 'preview-container';
                             previewDiv.innerHTML = `
                                 <img src="${e.target.result}" alt="Preview" class="w-full h-48 object-cover rounded-lg mb-4" />
-                                <button type="button" onclick="resetFileUpload()" class="text-sm text-red-600 hover:text-red-700">
+                                <button type="button" onclick="resetFileUpload()" class="inline-flex items-center text-sm text-red-600 hover:text-red-700 mt-2">
                                     <i class="ri-close-line mr-1"></i> Remove Image
                                 </button>
                             `;
                             
                             // Hide upload UI but keep the file input
-                            const uploadUI = uploadArea.querySelector('.ri-image-add-line')?.parentElement;
-                            if (uploadUI) {
-                                uploadUI.style.display = 'none';
-                            }
+                            uploadUI.style.display = 'none';
                             
                             // Add preview
-                            uploadArea.insertBefore(previewDiv, uploadArea.firstChild);
+                            uploadContainer.insertBefore(previewDiv, uploadUI);
                         };
                         reader.readAsDataURL(file);
                     }
@@ -442,19 +442,21 @@
 
             // Reset file upload function
             window.resetFileUpload = function() {
+                const fileInput = document.getElementById('cover-upload');
+                const uploadUI = document.getElementById('upload-ui');
+                const previewContainer = document.getElementById('preview-container');
+                
                 // Clear the file input
                 if (fileInput) {
                     fileInput.value = '';
                 }
                 
                 // Remove preview
-                if (previewDiv) {
-                    previewDiv.remove();
-                    previewDiv = null;
+                if (previewContainer) {
+                    previewContainer.remove();
                 }
                 
                 // Show upload UI again
-                const uploadUI = uploadArea?.querySelector('.ri-image-add-line')?.parentElement;
                 if (uploadUI) {
                     uploadUI.style.display = 'block';
                 }
