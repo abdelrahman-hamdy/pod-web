@@ -14,6 +14,7 @@ class Hackathon extends Model
     protected $fillable = [
         'title',
         'description',
+        'banner_image',
         'category_id',
         'start_date',
         'end_date',
@@ -30,7 +31,6 @@ class Hackathon extends Model
         'rules',
         'is_active',
         'created_by',
-        'cover_image',
     ];
 
     protected function casts(): array

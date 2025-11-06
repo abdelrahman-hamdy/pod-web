@@ -115,8 +115,8 @@ class HackathonResource extends Resource
 
                 Forms\Components\Section::make('Additional Details')
                     ->schema([
-                        Forms\Components\FileUpload::make('cover_image')
-                            ->label('Cover Image')
+                        Forms\Components\FileUpload::make('banner_image')
+                            ->label('Banner Image')
                             ->image()
                             ->directory('hackathons')
                             ->maxSize(2048)
