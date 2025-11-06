@@ -146,9 +146,9 @@ Route::prefix('v1')->group(function () {
         Route::post('/hackathons/{hackathon}/join-team', [HackathonController::class, 'joinTeam']);
         Route::delete('/hackathons/{hackathon}/leave-team', [HackathonController::class, 'leaveTeam']);
 
-        // Hackathon Teams
-        Route::get('/hackathons/teams', [HackathonController::class, 'myTeams']);
+        // Hackathon Teams - Order matters! More specific routes first
         Route::get('/hackathons/teams/available', [HackathonController::class, 'availableTeams']);
+        Route::get('/hackathons/teams', [HackathonController::class, 'myTeams']);
         Route::get('/hackathons/invitations/received', [HackathonController::class, 'receivedInvitations']);
         Route::get('/hackathons/join-requests/sent', [HackathonController::class, 'sentJoinRequests']);
         Route::get('/hackathons/join-requests/received', [HackathonController::class, 'receivedJoinRequests']);
