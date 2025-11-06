@@ -130,20 +130,29 @@ class JobListingController extends BaseApiController
         $user = $request->user();
         
         // Load relationships including user's application if authenticated
-        $with = ['category', 'poster'];
+        $relationships = ['category', 'poster'];
+        
+        // Add user's application if authenticated (use closure to filter)
         if ($user) {
-            $with[] = 'userApplication';
+            \Log::info("JobListingController@show: Adding userApplication relationship for user {$user->id}");
+            $relationships['userApplication'] = function ($query) use ($user) {
+                \Log::info("JobListingController@show: userApplication query closure executing for user {$user->id}");
+                $query->where('user_id', $user->id);
+            };
+        } else {
+            \Log::warning("JobListingController@show: User not authenticated, skipping userApplication");
         }
         
-        $job->load($with);
+        $job->load($relationships);
         
         // Debug logging
         \Log::info('Job Detail API Response', [
             'job_id' => $job->id,
             'user_id' => $user?->id,
-            'has_user_application' => $job->relationLoaded('userApplication') && $job->userApplication !== null,
-            'application_status' => $job->userApplication?->status?->value,
-            'application_date' => $job->userApplication?->created_at?->toISOString(),
+            'userApplication_loaded' => $job->relationLoaded('userApplication') ? 'YES' : 'NO',
+            'has_user_application' => $job->userApplication !== null,
+            'application_status' => $job->userApplication?->status?->value ?? 'NULL',
+            'application_date' => $job->userApplication?->created_at?->toISOString() ?? 'NULL',
         ]);
 
         return $this->successResponse(new JobListingResource($job));
