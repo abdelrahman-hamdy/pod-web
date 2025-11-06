@@ -173,48 +173,67 @@ class EventController extends BaseApiController
     {
         $user = $request->user();
         
-        // Check if event is active
-        if (! $event->is_active) {
-            return $this->errorResponse('This event is not active', null, 400);
-        }
-        
-        // Check if registration deadline has passed
-        if ($event->registration_deadline && $event->registration_deadline->isPast()) {
-            return $this->errorResponse('Registration deadline has passed', null, 400);
-        }
-        
-        // Check if event has started
-        if ($event->start_date->isPast()) {
-            return $this->errorResponse('This event has already started', null, 400);
-        }
-        
-        // Check if user is already registered
-        if ($event->registrations()->where('user_id', $user->id)->exists()) {
-            return $this->errorResponse('You are already registered for this event', null, 400);
-        }
-        
-        // Check if event is full
-        if ($event->isFull() && ! $event->waitlist_enabled) {
-            return $this->errorResponse('This event is full', null, 400);
-        }
-        
-        if (! $event->canUserRegister($user)) {
-            return $this->errorResponse('You cannot register for this event', null, 400);
-        }
+        try {
+            // Use database transaction to prevent race conditions
+            $registration = \Illuminate\Support\Facades\DB::transaction(function () use ($event, $user) {
+                // Check if event is active
+                if (! $event->is_active) {
+                    throw new \Exception('This event is not active');
+                }
+                
+                // Check if registration deadline has passed
+                if ($event->registration_deadline && $event->registration_deadline->isPast()) {
+                    throw new \Exception('Registration deadline has passed');
+                }
+                
+                // Check if event has started
+                if ($event->start_date->isPast()) {
+                    throw new \Exception('This event has already started');
+                }
+                
+                // Double-check if user is already registered (with lock)
+                $existingRegistration = $event->registrations()
+                    ->where('user_id', $user->id)
+                    ->lockForUpdate()
+                    ->first();
+                    
+                if ($existingRegistration) {
+                    throw new \Exception('You are already registered for this event');
+                }
+                
+                // Check if event is full
+                if ($event->isFull() && ! $event->waitlist_enabled) {
+                    throw new \Exception('This event is full');
+                }
+                
+                if (! $event->canUserRegister($user)) {
+                    throw new \Exception('You cannot register for this event');
+                }
 
-        $registration = $event->registerUser($request->user());
+                return $event->registerUser($user);
+            });
 
-        $message = $registration->status === \App\EventRegistrationStatus::CONFIRMED
-            ? 'Successfully registered for the event!'
-            : 'Added to waitlist. You will be notified if a spot becomes available.';
+            $message = $registration->status === \App\EventRegistrationStatus::CONFIRMED
+                ? 'Successfully registered for the event!'
+                : 'Added to waitlist. You will be notified if a spot becomes available.';
 
-        return $this->successResponse([
-            'registration' => [
-                'id' => $registration->id,
-                'status' => $registration->status->value,
-                'ticket_code' => $registration->ticket_code,
-            ],
-        ], $message, 201);
+            return $this->successResponse([
+                'registration' => [
+                    'id' => $registration->id,
+                    'status' => $registration->status->value,
+                    'ticket_code' => $registration->ticket_code,
+                ],
+            ], $message, 201);
+            
+        } catch (\Illuminate\Database\QueryException $e) {
+            // Catch unique constraint violation (duplicate registration)
+            if ($e->getCode() === '23000') {
+                return $this->errorResponse('You are already registered for this event', null, 400);
+            }
+            throw $e;
+        } catch (\Exception $e) {
+            return $this->errorResponse($e->getMessage(), null, 400);
+        }
     }
 
     /**
