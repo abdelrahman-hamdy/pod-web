@@ -111,17 +111,35 @@ class EventController extends BaseApiController
             return $this->notFoundResponse();
         }
 
+        $user = $request->user();
+        
+        // Debug logging
+        \Log::info("EventController@show for event {$event->id}: user=" . ($user ? "ID:{$user->id}" : "NOT_AUTHENTICATED"));
+        
         // Load all relationships in one call
         $relationships = ['creator', 'category'];
         
         // Add user's registration if authenticated
-        if ($request->user()) {
-            $relationships['registrations'] = function ($query) use ($request) {
-                $query->where('user_id', $request->user()->id);
+        if ($user) {
+            \Log::info("EventController@show: Adding registrations relationship for user {$user->id}");
+            $relationships['registrations'] = function ($query) use ($user) {
+                \Log::info("EventController@show: Registration query closure executing for user {$user->id}");
+                $query->where('user_id', $user->id);
             };
+        } else {
+            \Log::warning("EventController@show: User not authenticated, skipping registrations");
         }
         
         $event->load($relationships);
+        
+        // Verify registration was loaded
+        if ($user) {
+            $loadedCount = $event->registrations->count();
+            \Log::info("EventController@show: After load, registrations count = {$loadedCount}");
+            if ($loadedCount > 0) {
+                \Log::info("EventController@show: Registration found - status: {$event->registrations->first()->status->value}");
+            }
+        }
 
         return $this->successResponse(new EventResource($event));
     }
