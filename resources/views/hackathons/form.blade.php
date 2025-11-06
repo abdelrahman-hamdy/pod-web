@@ -205,10 +205,10 @@
             <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
                 <h2 class="text-xl font-semibold text-slate-800 mb-6">Cover Image</h2>
                 <div class="space-y-4">
-                    @if($isEdit && $hackathon->cover_image)
+                    @if($isEdit && $hackathon->banner_image)
                         <div class="mb-4">
-                            <label class="block text-sm font-medium text-slate-700 mb-2">Current Cover</label>
-                            <img src="{{ uploaded_file($hackathon->cover_image) }}" alt="Current cover" class="w-full h-48 object-cover rounded-lg" />
+                            <label class="block text-sm font-medium text-slate-700 mb-2">Current Banner</label>
+                            <img src="{{ uploaded_file($hackathon->banner_image) }}" alt="Current banner" class="w-full h-48 object-cover rounded-lg" />
                         </div>
                     @endif
                     
@@ -217,18 +217,14 @@
                         <p class="text-slate-600 mb-2">Click to upload or drag and drop</p>
                         <p class="text-sm text-slate-500">PNG, JPG up to 2MB</p>
                         <input type="file" 
-                               name="cover_image" 
+                               name="banner_image" 
                                accept="image/*" 
                                class="hidden" 
                                id="cover-upload" />
-                        <input type="hidden" 
-                               name="cover_image_temp" 
-                               id="cover_image_temp" 
-                               value="" />
                         <label for="cover-upload" class="cursor-pointer">
                             <div class="mt-4 inline-flex items-center px-4 py-2 border border-slate-300 rounded-lg text-sm text-slate-700 hover:bg-slate-50">
                                 <i class="ri-upload-line mr-2"></i>
-                                {{ ($isEdit && $hackathon->cover_image) ? 'Change Cover' : 'Choose Cover' }}
+                                {{ ($isEdit && $hackathon->banner_image) ? 'Change Banner' : 'Choose Banner' }}
                             </div>
                         </label>
                     </div>
@@ -422,7 +418,7 @@
                             // Re-add the original file input (hidden)
                             const hiddenInput = document.createElement('input');
                             hiddenInput.type = 'file';
-                            hiddenInput.name = 'cover_image';
+                            hiddenInput.name = 'banner_image';
                             hiddenInput.accept = 'image/*';
                             hiddenInput.className = 'hidden';
                             hiddenInput.id = 'cover-upload-hidden';
@@ -441,7 +437,7 @@
                     <p class="text-slate-600 mb-2">Click to upload or drag and drop</p>
                     <p class="text-sm text-slate-500">PNG, JPG up to 2MB</p>
                     <input type="file" 
-                           name="cover_image" 
+                           name="banner_image" 
                            accept="image/*" 
                            class="hidden" 
                            id="cover-upload-reset" />

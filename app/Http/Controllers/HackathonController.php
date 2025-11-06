@@ -128,7 +128,7 @@ class HackathonController extends Controller
                 'technologies.*' => 'string|max:255',
                 'rules' => 'nullable|string',
                 'category_id' => 'nullable|exists:hackathon_categories,id',
-                'cover_image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+                'banner_image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
             ]);
 
             // Set location to null if format is online and location is empty
@@ -140,10 +140,10 @@ class HackathonController extends Controller
             $validated['is_active'] = true;
             $validated['entry_fee'] = 0; // Set default entry fee (hidden field)
 
-            // Handle cover image upload
-            if ($request->hasFile('cover_image')) {
-                $validated['cover_image'] = $request->file('cover_image')
-                    ->store('hackathons/covers', 'public');
+            // Handle banner image upload
+            if ($request->hasFile('banner_image')) {
+                $validated['banner_image'] = $request->file('banner_image')
+                    ->store('hackathons', 'public');
             }
 
             $hackathon = Hackathon::create($validated);
@@ -231,7 +231,7 @@ class HackathonController extends Controller
                 'technologies.*' => 'string|max:255',
                 'rules' => 'nullable|string',
                 'is_active' => 'sometimes|boolean',
-                'cover_image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+                'banner_image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
             ]);
 
             // Set location to null if format is online and location is empty
@@ -244,15 +244,15 @@ class HackathonController extends Controller
             // Handle checkbox - if not checked, set to false
             $validated['is_active'] = $request->has('is_active') ? true : false;
 
-            // Handle cover image upload
-            if ($request->hasFile('cover_image')) {
-                // Delete old cover image
-                if ($hackathon->cover_image) {
-                    Storage::disk('public')->delete($hackathon->cover_image);
+            // Handle banner image upload
+            if ($request->hasFile('banner_image')) {
+                // Delete old banner image
+                if ($hackathon->banner_image) {
+                    Storage::disk('public')->delete($hackathon->banner_image);
                 }
 
-                $validated['cover_image'] = $request->file('cover_image')
-                    ->store('hackathons/covers', 'public');
+                $validated['banner_image'] = $request->file('banner_image')
+                    ->store('hackathons', 'public');
             }
 
             $hackathon->update($validated);
@@ -273,9 +273,9 @@ class HackathonController extends Controller
     {
         $this->authorize('delete', $hackathon);
 
-        // Delete cover image if exists
-        if ($hackathon->cover_image) {
-            Storage::disk('public')->delete($hackathon->cover_image);
+        // Delete banner image if exists
+        if ($hackathon->banner_image) {
+            Storage::disk('public')->delete($hackathon->banner_image);
         }
 
         $hackathon->delete();

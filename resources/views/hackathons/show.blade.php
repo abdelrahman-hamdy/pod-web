@@ -7,8 +7,8 @@
     <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
         <!-- Image Header -->
         <div class="h-80 bg-gradient-to-br from-indigo-50 to-purple-50 relative overflow-hidden">
-            @if($hackathon->cover_image)
-                <img src="{{ uploaded_file($hackathon->cover_image) }}" 
+            @if($hackathon->banner_image)
+                <img src="{{ uploaded_file($hackathon->banner_image) }}" 
                      alt="{{ $hackathon->title }}" 
                      class="w-full h-full object-cover object-top" />
             @else
