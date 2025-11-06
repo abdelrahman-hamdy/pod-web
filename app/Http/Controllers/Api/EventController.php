@@ -69,6 +69,20 @@ class EventController extends BaseApiController
     }
 
     /**
+     * Get event categories.
+     */
+    public function categories(Request $request): JsonResponse
+    {
+        $categories = \App\Models\EventCategory::where('is_active', true)
+            ->orderBy('name')
+            ->get();
+
+        return $this->successResponse(
+            \App\Http\Resources\CategoryResource::collection($categories)
+        );
+    }
+
+    /**
      * Store a newly created event.
      */
     public function store(Request $request): JsonResponse

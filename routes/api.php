@@ -39,6 +39,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/posts', [PostController::class, 'index'])->middleware('auth:sanctum');
         Route::get('/posts/{post}', [PostController::class, 'show'])->middleware('auth:sanctum');
         Route::get('/events', [EventController::class, 'index']);
+        Route::get('/events/categories', [EventController::class, 'categories']);
         Route::get('/events/{event}', [EventController::class, 'show']);
         Route::get('/jobs', [JobListingController::class, 'index']);
         Route::get('/jobs/{job}', [JobListingController::class, 'show'])->where('job', '[0-9]+');
