@@ -44,7 +44,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/jobs', [JobListingController::class, 'index']);
         Route::get('/jobs/{job}', [JobListingController::class, 'show'])->where('job', '[0-9]+');
         Route::get('/hackathons', [HackathonController::class, 'index']);
-        Route::get('/hackathons/{hackathon}', [HackathonController::class, 'show']);
+        Route::get('/hackathons/{hackathon}', [HackathonController::class, 'show'])->where('hackathon', '[0-9]+');
         Route::get('/internships', [InternshipController::class, 'index']);
         Route::get('/internships/{internship}', [InternshipController::class, 'show'])->where('internship', '[0-9]+');
     });
@@ -139,15 +139,17 @@ Route::prefix('v1')->group(function () {
 
         // Hackathons
         Route::post('/hackathons', [HackathonController::class, 'store']);
-        Route::put('/hackathons/{hackathon}', [HackathonController::class, 'update']);
-        Route::delete('/hackathons/{hackathon}', [HackathonController::class, 'destroy']);
-        Route::post('/hackathons/{hackathon}/register', [HackathonController::class, 'register']);
-        Route::get('/hackathons/{hackathon}/teams', [HackathonController::class, 'teams']);
-        Route::post('/hackathons/{hackathon}/join-team', [HackathonController::class, 'joinTeam']);
-        Route::delete('/hackathons/{hackathon}/leave-team', [HackathonController::class, 'leaveTeam']);
+        Route::put('/hackathons/{hackathon}', [HackathonController::class, 'update'])->where('hackathon', '[0-9]+');
+        Route::delete('/hackathons/{hackathon}', [HackathonController::class, 'destroy'])->where('hackathon', '[0-9]+');
+        Route::post('/hackathons/{hackathon}/register', [HackathonController::class, 'register'])->where('hackathon', '[0-9]+');
+        Route::get('/hackathons/{hackathon}/teams', [HackathonController::class, 'teams'])->where('hackathon', '[0-9]+');
+        Route::post('/hackathons/{hackathon}/join-team', [HackathonController::class, 'joinTeam'])->where('hackathon', '[0-9]+');
+        Route::delete('/hackathons/{hackathon}/leave-team', [HackathonController::class, 'leaveTeam'])->where('hackathon', '[0-9]+');
 
         // Hackathon Teams - Order matters! More specific routes first
         Route::get('/hackathons/teams/available', [HackathonController::class, 'availableTeams']);
+        // Alias for stability across clients
+        Route::get('/hackathons/my-teams', [HackathonController::class, 'myTeams']);
         Route::get('/hackathons/teams', [HackathonController::class, 'myTeams']);
         Route::get('/hackathons/invitations/received', [HackathonController::class, 'receivedInvitations']);
         Route::get('/hackathons/join-requests/sent', [HackathonController::class, 'sentJoinRequests']);
