@@ -136,6 +136,15 @@ class JobListingController extends BaseApiController
         }
         
         $job->load($with);
+        
+        // Debug logging
+        \Log::info('Job Detail API Response', [
+            'job_id' => $job->id,
+            'user_id' => $user?->id,
+            'has_user_application' => $job->relationLoaded('userApplication') && $job->userApplication !== null,
+            'application_status' => $job->userApplication?->status?->value,
+            'application_date' => $job->userApplication?->created_at?->toISOString(),
+        ]);
 
         return $this->successResponse(new JobListingResource($job));
     }
