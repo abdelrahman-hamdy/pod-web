@@ -15,6 +15,15 @@ class EventResource extends JsonResource
     public function toArray(Request $request): array
     {
         $user = $request->user();
+        
+        // Debug logging
+        if ($user) {
+            \Log::info("EventResource for event {$this->id}: user_id={$user->id}, registrations_loaded=" . ($this->relationLoaded('registrations') ? 'YES' : 'NO'));
+            if ($this->relationLoaded('registrations')) {
+                \Log::info("EventResource for event {$this->id}: registrations_count=" . $this->registrations->count());
+                \Log::info("EventResource for event {$this->id}: registrations=" . $this->registrations->pluck('user_id')->toJson());
+            }
+        }
 
         return [
             'id' => $this->id,
