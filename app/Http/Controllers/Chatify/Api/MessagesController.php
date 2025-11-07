@@ -167,11 +167,17 @@ class MessagesController extends Controller
         $messages = $query->paginate($request->per_page ?? $this->perPage);
         $totalMessages = $messages->total();
         $lastPage = $messages->lastPage();
+
+        // Parse each message to add computed fields like timeAgo, isSender, etc.
+        $parsedMessages = array_map(function ($message) {
+            return Chatify::parseMessage($message);
+        }, $messages->items());
+
         $response = [
             'total' => $totalMessages,
             'last_page' => $lastPage,
-            'last_message_id' => collect($messages->items())->last()->id ?? null,
-            'messages' => $messages->items(),
+            'last_message_id' => collect($parsedMessages)->last()->id ?? null,
+            'messages' => $parsedMessages,
         ];
 
         return Response::json($response);
