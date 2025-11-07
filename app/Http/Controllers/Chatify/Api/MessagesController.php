@@ -388,6 +388,8 @@ class MessagesController extends Controller
         ], 200);
     }
 
+ 
+
     /**
      * Get unread conversations count
      *
