@@ -284,19 +284,24 @@ class MessagesController extends Controller
      */
     public function search(Request $request)
     {
-        $input = trim(filter_var($request['input']));
-        $records = User::where('id', '!=', Auth::user()->id)
-            ->where('name', 'LIKE', "%{$input}%")
-            ->paginate($request->per_page ?? $this->perPage);
+        $input = trim((string) $request->input('input', ''));
+        $perPage = $request->per_page ?? $this->perPage;
 
-        foreach ($records->items() as $index => $record) {
-            $records[$index] += Chatify::getUserWithAvatar($record);
-        }
+        $paginator = User::where('id', '!=', Auth::user()->id)
+            ->where('name', 'LIKE', "%{$input}%")
+            ->paginate($perPage);
+
+        $items = array_map(function ($user) {
+            $withAvatar = Chatify::getUserWithAvatar($user);
+            return array_merge($user->toArray(), [
+                'avatar' => $withAvatar->avatar ?? null,
+            ]);
+        }, $paginator->items());
 
         return Response::json([
-            'records' => $records->items(),
-            'total' => $records->total(),
-            'last_page' => $records->lastPage(),
+            'records' => $items,
+            'total' => $paginator->total(),
+            'last_page' => $paginator->lastPage(),
         ], 200);
     }
 
