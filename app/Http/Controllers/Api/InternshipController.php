@@ -39,9 +39,8 @@ class InternshipController extends BaseApiController
         $internships = $query->paginate($request->get('per_page', 9));
 
         // Include categories in response for better performance
-        $categories = \App\Models\InternshipCategory::where('is_active', true)
-            ->orderBy('name')
-            ->get(['id', 'name', 'slug', 'color']);
+        $categories = \App\Models\InternshipCategory::orderBy('name')
+            ->get(['id', 'name', 'slug', 'description']);
 
         return $this->paginatedResponse($internships, [
             'categories' => $categories,
