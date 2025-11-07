@@ -387,4 +387,18 @@ class MessagesController extends Controller
             'status' => $status,
         ], 200);
     }
+
+    /**
+     * Get unread conversations count
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function unreadCount()
+    {
+        $count = Chatify::countUnreadConversations();
+
+        return Response::json([
+            'count' => $count,
+        ], 200);
+    }
 }
