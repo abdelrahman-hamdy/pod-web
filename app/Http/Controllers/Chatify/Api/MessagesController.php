@@ -200,20 +200,39 @@ class MessagesController extends Controller
      */
     public function getContacts(Request $request)
     {
-        // get all users that received/sent message from/to [Auth user]
-        $users = Message::join('users', function ($join) {
-            $join->on('ch_messages.from_id', '=', 'users.id')
-                ->orOn('ch_messages.to_id', '=', 'users.id');
+        $authId = Auth::user()->id;
+        $perPage = $request->per_page ?? $this->perPage;
+
+        // Build a subquery that finds the latest message timestamp per counterpart user
+        $incoming = Message::select(
+            'from_id as user_id',
+            DB::raw('MAX(created_at) as last_at')
+        )
+            ->where('to_id', $authId)
+            ->groupBy('from_id');
+
+        $outgoing = Message::select(
+            'to_id as user_id',
+            DB::raw('MAX(created_at) as last_at')
+        )
+            ->where('from_id', $authId)
+            ->groupBy('to_id');
+
+        // Union both directions and aggregate again to get the absolute latest per user
+        $union = $incoming->unionAll($outgoing);
+
+        $latestPerUser = DB::query()
+            ->fromSub($union, 'm')
+            ->select('user_id', DB::raw('MAX(last_at) as last_at'))
+            ->groupBy('user_id');
+
+        // Join the latest-per-user with users and paginate
+        $users = User::joinSub($latestPerUser, 'latest', function ($join) {
+            $join->on('users.id', '=', 'latest.user_id');
         })
-            ->where(function ($q) {
-                $q->where('ch_messages.from_id', Auth::user()->id)
-                    ->orWhere('ch_messages.to_id', Auth::user()->id);
-            })
-            ->where('users.id', '!=', Auth::user()->id)
-            ->select('users.*', DB::raw('MAX(ch_messages.created_at) max_created_at'))
-            ->orderBy('max_created_at', 'desc')
-            ->groupBy('users.id')
-            ->paginate($request->per_page ?? $this->perPage);
+            ->where('users.id', '!=', $authId)
+            ->orderBy('latest.last_at', 'desc')
+            ->paginate($perPage);
 
         return response()->json([
             'contacts' => $users->items(),
