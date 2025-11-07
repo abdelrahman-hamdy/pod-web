@@ -30,7 +30,7 @@ class BaseApiController extends Controller
     /**
      * Return a successful paginated JSON response.
      */
-    protected function paginatedResponse($paginator, ?string $message = null, ?string $resourceClass = null, $transformedData = null): JsonResponse
+    protected function paginatedResponse($paginator, $additionalData = null, ?string $message = null, ?string $resourceClass = null, $transformedData = null): JsonResponse
     {
         $items = $transformedData
             ?? ($resourceClass
@@ -55,6 +55,11 @@ class BaseApiController extends Controller
                 'next' => $paginator->nextPageUrl(),
             ],
         ];
+
+        // Merge additional data if provided
+        if (is_array($additionalData)) {
+            $response = array_merge($response, $additionalData);
+        }
 
         if ($message !== null) {
             $response['message'] = $message;

@@ -24,7 +24,7 @@ class CommentController extends BaseApiController
         // Transform using CommentResource to include can_edit field with request context
         $transformedData = $comments->getCollection()->map(fn ($comment) => (new CommentResource($comment))->toArray($request));
 
-        return $this->paginatedResponse($comments, null, null, $transformedData);
+        return $this->paginatedResponse($comments, null, null, null, $transformedData);
     }
 
     /**

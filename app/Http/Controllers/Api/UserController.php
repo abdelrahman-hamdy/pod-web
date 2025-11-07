@@ -126,7 +126,7 @@ class UserController extends BaseApiController
         // Transform using PostResource to include is_liked, is_bookmarked, etc.
         $transformedData = $posts->getCollection()->map(fn ($post) => (new \App\Http\Resources\PostResource($post))->toArray($request));
 
-        return $this->paginatedResponse($posts, null, null, $transformedData);
+        return $this->paginatedResponse($posts, null, null, null, $transformedData);
     }
 
     /**

@@ -38,7 +38,14 @@ class InternshipController extends BaseApiController
 
         $internships = $query->paginate($request->get('per_page', 9));
 
-        return $this->paginatedResponse($internships);
+        // Include categories in response for better performance
+        $categories = \App\Models\InternshipCategory::where('is_active', true)
+            ->orderBy('name')
+            ->get(['id', 'name', 'slug', 'color']);
+
+        return $this->paginatedResponse($internships, [
+            'categories' => $categories,
+        ]);
     }
 
     /**
@@ -130,5 +137,19 @@ class InternshipController extends BaseApiController
             ->paginate($request->get('per_page', 15));
 
         return $this->paginatedResponse($applications);
+    }
+
+    /**
+     * Get internship categories.
+     */
+    public function categories(Request $request): JsonResponse
+    {
+        $categories = \App\Models\InternshipCategory::where('is_active', true)
+            ->orderBy('name')
+            ->get();
+
+        return $this->successResponse(
+            \App\Http\Resources\CategoryResource::collection($categories)
+        );
     }
 }

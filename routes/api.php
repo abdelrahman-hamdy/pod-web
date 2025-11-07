@@ -46,6 +46,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/hackathons', [HackathonController::class, 'index']);
         Route::get('/hackathons/{hackathon}', [HackathonController::class, 'show'])->where('hackathon', '[0-9]+');
         Route::get('/internships', [InternshipController::class, 'index']);
+        Route::get('/internships/categories', [InternshipController::class, 'categories']);
         Route::get('/internships/{internship}', [InternshipController::class, 'show'])->where('internship', '[0-9]+');
     });
 
