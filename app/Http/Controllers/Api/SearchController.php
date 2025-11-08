@@ -234,7 +234,6 @@ class SearchController extends BaseApiController
             ->where(function ($q) use ($query) {
                 $q->where('title', 'like', "%{$query}%")
                     ->orWhere('description', 'like', "%{$query}%")
-                    ->orWhere('theme', 'like', "%{$query}%")
                     ->orWhereJsonContains('technologies', $query);
             });
 
