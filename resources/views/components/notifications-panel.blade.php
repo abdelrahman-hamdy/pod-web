@@ -201,7 +201,7 @@
                 unreadCount: 0,
                 
                 init() {
-                    this.loadNotifications();
+                    console.log('Notifications panel initialized');
                     this.loadUnreadCount();
                     
                     // Poll for new notifications every 30 seconds
@@ -237,7 +237,17 @@
                                 'X-Requested-With': 'XMLHttpRequest',
                             }
                         });
+                        
+                        if (!response.ok) {
+                            console.error('Failed to load notifications:', response.status, response.statusText);
+                            if (response.status === 401) {
+                                console.error('User not authenticated');
+                            }
+                            return;
+                        }
+                        
                         const data = await response.json();
+                        console.log('Loaded notifications:', data);
                         this.notifications = data.data || [];
                     } catch (error) {
                         console.error('Failed to load notifications:', error);
@@ -266,7 +276,7 @@
                         const response = await fetch('/notifications/view-all', {
                             method: 'POST',
                             headers: {
-                                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
                                 'Accept': 'application/json',
                             },
                         });
@@ -302,7 +312,7 @@
                         await fetch(`/notifications/${notificationId}/read`, {
                             method: 'POST',
                             headers: {
-                                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
                                 'Content-Type': 'application/json',
                             },
                         });
@@ -325,7 +335,8 @@
                         await fetch('/notifications/read-all', {
                             method: 'POST',
                             headers: {
-                                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                                'Accept': 'application/json',
                             },
                         });
                         
