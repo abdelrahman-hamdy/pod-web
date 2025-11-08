@@ -36,19 +36,26 @@ class NotificationService
     {
         $preferences = $user->notificationPreferences;
 
-        // Check if user has in-app notifications enabled
-        if (in_array('database', $channels) && $preferences->in_app_notifications) {
-            $this->sendDatabaseNotification($user, $type, $data);
+        // Check if user has in-app notifications enabled (default to true if no preferences)
+        if (in_array('database', $channels)) {
+            // If no preferences exist or in_app_notifications is true, send the notification
+            if (!$preferences || $preferences->in_app_notifications !== false) {
+                $this->sendDatabaseNotification($user, $type, $data);
+            }
         }
 
         // Check if user has push notifications enabled
-        if (in_array('push', $channels) && $preferences->push_notifications && $user->fcm_token) {
-            $this->sendPushNotification($user, $type, $data);
+        if (in_array('push', $channels) && $user->fcm_token) {
+            if (!$preferences || $preferences->push_notifications !== false) {
+                $this->sendPushNotification($user, $type, $data);
+            }
         }
 
         // Check if user has email notifications enabled and type requires it
-        if (in_array('mail', $channels) && $preferences->email_notifications && $type->requiresEmail()) {
-            $this->sendEmailNotification($user, $type, $data);
+        if (in_array('mail', $channels) && $type->requiresEmail()) {
+            if (!$preferences || $preferences->email_notifications !== false) {
+                $this->sendEmailNotification($user, $type, $data);
+            }
         }
     }
 
@@ -67,19 +74,25 @@ class NotificationService
 
             $preferences = $user->notificationPreferences;
 
-            // Send database notification
-            if (in_array('database', $channels) && $preferences->in_app_notifications) {
-                $this->sendDatabaseNotification($user, $type, $data);
+            // Send database notification (default to true if no preferences)
+            if (in_array('database', $channels)) {
+                if (!$preferences || $preferences->in_app_notifications !== false) {
+                    $this->sendDatabaseNotification($user, $type, $data);
+                }
             }
 
             // Collect push tokens
-            if (in_array('push', $channels) && $preferences->push_notifications && $user->fcm_token) {
-                $pushTokens[] = $user->fcm_token;
+            if (in_array('push', $channels) && $user->fcm_token) {
+                if (!$preferences || $preferences->push_notifications !== false) {
+                    $pushTokens[] = $user->fcm_token;
+                }
             }
 
             // Collect email users
-            if (in_array('mail', $channels) && $preferences->email_notifications && $type->requiresEmail()) {
-                $emailUsers[] = $user;
+            if (in_array('mail', $channels) && $type->requiresEmail()) {
+                if (!$preferences || $preferences->email_notifications !== false) {
+                    $emailUsers[] = $user;
+                }
             }
         }
 
