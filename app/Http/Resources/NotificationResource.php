@@ -58,17 +58,23 @@ class NotificationResource extends JsonResource
      */
     private function mapNotificationType(string $className): string
     {
-        $mapping = [
-            'PostLiked' => 'post_like',
-            'CommentAdded' => 'post_comment', 
-            'CommentReply' => 'comment_reply',
-            'HackathonTeamInvite' => 'follow',
-            'EventReminder' => 'event_reminder',
-            'JobApplicationReceived' => 'job_application_update',
-        ];
+        // Try to extract the class name from the full namespaced class
+        $class = basename(str_replace('\\', '/', $className));
         
-        $simpleClassName = class_basename($className);
-        return $mapping[$simpleClassName] ?? 'system';
+        return match ($class) {
+            'PostLiked' => 'post_like',
+            'CommentAdded' => 'post_comment',
+            'CommentReply' => 'comment_reply',
+            'CommentLiked' => 'comment_like',
+            'UserFollowed' => 'follow',
+            'MessageReceived' => 'message',
+            'EventReminder' => 'event_reminder',
+            'HackathonUpdate' => 'hackathon_update',
+            'JobApplicationUpdate' => 'job_application_update',
+            'InternshipApplicationUpdate' => 'internship_application_update',
+            'SystemNotification' => 'system',
+            default => 'system',
+        };
     }
     
     /**
@@ -76,11 +82,11 @@ class NotificationResource extends JsonResource
      */
     private function extractTitle(array $data): string
     {
-        return $data['title'] ?? $data['message'] ?? 'New Notification';
+        return $data['title'] ?? $data['subject'] ?? 'Notification';
     }
     
     /**
-     * Extract body from notification data
+     * Extract body/message from notification data
      */
     private function extractBody(array $data): string
     {
