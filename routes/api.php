@@ -172,6 +172,8 @@ Route::prefix('v1')->group(function () {
         // Notifications
         Route::get('/notifications', [NotificationController::class, 'index']);
         Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount']);
+        Route::get('/notifications/viewed-count', [NotificationController::class, 'viewedCount']);
+        Route::patch('/notifications/mark-all-viewed', [NotificationController::class, 'markAllAsViewed']);
         Route::get('/notifications/{notificationId}/details', [NotificationController::class, 'getNotificationDetails']);
         Route::patch('/notifications/{notificationId}/read', [NotificationController::class, 'markAsRead']);
         Route::patch('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);

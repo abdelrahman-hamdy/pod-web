@@ -23,11 +23,33 @@ class NotificationResource extends JsonResource
             'title' => $this->extractTitle($data),
             'body' => $this->extractBody($data),
             'image' => $data['image'] ?? null,
-            'action_url' => $data['action_url'] ?? null,
+            'action_url' => $data['click_action'] ?? null,
             'action_data' => $data,
+            
+            // Two-level read system
             'is_read' => !is_null($this->read_at),
+            'is_viewed' => !is_null($this->viewed_at),
             'read_at' => $this->read_at?->toISOString(),
+            'viewed_at' => $this->viewed_at?->toISOString(),
+            
+            // Actor information for avatar and user context
+            'actor' => [
+                'id' => $data['actor_id'] ?? null,
+                'name' => $data['actor_name'] ?? 'User',
+                'avatar' => $data['actor_avatar'] ?? null,
+                'avatar_color' => $data['actor_avatar_color'] ?? null,
+            ],
+            
+            // Notification styling information
+            'icon' => $data['icon'] ?? null,
+            'action_icon' => $data['action_icon'] ?? null,
+            'icon_color' => $data['icon_color'] ?? null,
+            'overlay_background_color' => $data['overlay_background_color'] ?? null,
+            'background_color' => $data['background_color'] ?? null,
+            'category' => $data['category'] ?? 'general',
+            
             'created_at' => $this->created_at->toISOString(),
+            'time_ago' => $this->created_at->diffForHumans(),
         ];
     }
     

@@ -48,17 +48,50 @@ class NotificationController extends BaseApiController
     }
 
     /**
-     * Get unread notifications count.
+     * Get unread notifications count based on viewed_at (for mobile badge).
+     * This is what shows the red badge on the notifications icon.
      */
     public function unreadCount(Request $request): JsonResponse
     {
-        $count = $request->user()->unreadNotifications()->count();
+        $count = $request->user()->notifications()->whereNull('viewed_at')->count();
 
         return $this->successResponse(['count' => $count]);
     }
 
     /**
-     * Mark notification as read.
+     * Get viewed notifications count (complement of unread count).
+     */
+    public function viewedCount(Request $request): JsonResponse
+    {
+        $count = $request->user()->notifications()->whereNotNull('viewed_at')->count();
+
+        return $this->successResponse(['count' => $count]);
+    }
+
+    /**
+     * Mark all notifications as viewed (when mobile app opens notifications page).
+     * This resets the badge count but keeps individual notifications highlighted.
+     */
+    public function markAllAsViewed(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        // Set viewed_at for all unviewed notifications
+        $user->notifications()
+            ->whereNull('viewed_at')
+            ->update(['viewed_at' => now()]);
+
+        // Return the new unread count (should be 0 since viewed_at is set)
+        $unreadCount = $user->notifications()->whereNull('viewed_at')->count();
+
+        return $this->successResponse([
+            'unread_count' => $unreadCount,
+            'message' => 'All notifications marked as viewed'
+        ]);
+    }
+
+    /**
+     * Mark notification as read (when user clicks and views the specific notification).
      */
     public function markAsRead(Request $request, string $notificationId): JsonResponse
     {
