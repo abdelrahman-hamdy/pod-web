@@ -33,7 +33,8 @@ class NotificationController extends Controller
             $query->where('type', 'like', "%{$request->type}%");
         }
 
-        $notifications = $query->paginate(20);
+        $perPage = (int) $request->get('per_page', 20);
+        $notifications = $query->paginate($perPage);
 
         if ($request->expectsJson()) {
             return response()->json([
@@ -102,7 +103,15 @@ class NotificationController extends Controller
             ->first();
 
         if ($notification) {
-            $notification->markAsRead();
+            // Ensure both read_at and viewed_at are set when a notification is clicked
+            if (method_exists($notification, 'forceFill')) {
+                $notification->forceFill([
+                    'read_at' => now(),
+                    'viewed_at' => $notification->getAttribute('viewed_at') ?: now(),
+                ])->save();
+            } else {
+                $notification->markAsRead();
+            }
 
             return response()->json([
                 'success' => true,
@@ -189,7 +198,8 @@ class NotificationController extends Controller
             ->take($limit)
             ->get();
 
-        $unreadCount = $user->unreadNotifications()->count();
+        // Badge count is based on unviewed notifications
+        $unreadCount = $user->notifications()->whereNull('viewed_at')->count();
 
         return response()->json([
             'success' => true,
@@ -199,6 +209,7 @@ class NotificationController extends Controller
                     'type' => $notification->type,
                     'data' => $notification->data,
                     'read_at' => $notification->read_at,
+                    'viewed_at' => method_exists($notification, 'getAttribute') ? $notification->getAttribute('viewed_at') : null,
                     'created_at' => $notification->created_at,
                     'time_ago' => $notification->created_at->diffForHumans(),
                 ];

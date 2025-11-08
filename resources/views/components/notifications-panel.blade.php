@@ -56,7 +56,10 @@
                     <a :href="notification.data.click_action || '#'" 
                        @click.prevent="handleNotificationClick(notification.id, notification.data.click_action)"
                        class="flex items-start px-4 py-3 group block"
-                       :class="{ 'bg-indigo-50': !notification.read_at, 'bg-blue-50': notification.read_at && !notification.viewed_at }">
+                       :class="{
+                           'bg-indigo-50': !notification.read_at && !notification.viewed_at,
+                           'bg-blue-50': !notification.read_at && notification.viewed_at
+                       }">
                         <!-- User Avatar with Overlay Icon -->
                         <div class="flex-shrink-0 mr-3 relative">
                             <div class="w-10 h-10 rounded-full overflow-hidden border-2 border-white">
@@ -143,7 +146,10 @@
                         <a :href="notification.data.click_action || '#'" 
                            @click.prevent="handleNotificationClick(notification.id, notification.data.click_action)"
                            class="flex items-start px-4 py-3 group block"
-                           :class="{ 'bg-indigo-50': !notification.read_at, 'bg-blue-50': notification.read_at && !notification.viewed_at }">
+                           :class="{
+                               'bg-indigo-50': !notification.read_at && !notification.viewed_at,
+                               'bg-blue-50': !notification.read_at && notification.viewed_at
+                           }">
                             <!-- User Avatar with Overlay Icon -->
                             <div class="flex-shrink-0 mr-3 relative">
                                 <div class="w-10 h-10 rounded-full overflow-hidden border-2 border-white">

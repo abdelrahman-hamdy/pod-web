@@ -19,7 +19,8 @@ class NotificationResource extends JsonResource
         return [
             'id' => $this->id,
             'user_id' => $this->notifiable_id,
-            'type' => $this->mapNotificationType($this->type ?? ''),
+            // Prefer the explicit type stored in the notification data (from NotificationService)
+            'type' => $data['type'] ?? $this->mapNotificationType($this->type ?? ''),
             'title' => $this->extractTitle($data),
             'body' => $this->extractBody($data),
             'image' => $data['image'] ?? null,
