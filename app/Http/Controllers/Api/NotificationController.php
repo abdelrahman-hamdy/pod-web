@@ -39,7 +39,12 @@ class NotificationController extends BaseApiController
 
         $notifications = $query->latest()->paginate($request->get('per_page', 20));
 
-        return $this->paginatedResponse($notifications);
+        return $this->paginatedResponse(
+            $notifications,
+            null,
+            'Notifications retrieved successfully',
+            \App\Http\Resources\NotificationResource::class
+        );
     }
 
     /**
