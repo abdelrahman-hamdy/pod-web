@@ -172,6 +172,7 @@ Route::prefix('v1')->group(function () {
         // Notifications
         Route::get('/notifications', [NotificationController::class, 'index']);
         Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount']);
+        Route::get('/notifications/{notificationId}/details', [NotificationController::class, 'getNotificationDetails']);
         Route::patch('/notifications/{notificationId}/read', [NotificationController::class, 'markAsRead']);
         Route::patch('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
         Route::delete('/notifications/{notificationId}', [NotificationController::class, 'destroy']);
@@ -179,6 +180,7 @@ Route::prefix('v1')->group(function () {
         Route::post('/notifications/preferences', [NotificationController::class, 'updatePreferences']);
         Route::post('/notifications/fcm-token', [NotificationController::class, 'registerFcmToken']);
         Route::delete('/notifications/fcm-token', [NotificationController::class, 'removeFcmToken']);
+        Route::post('/notifications/test', [NotificationController::class, 'sendTestNotification']);
 
         // Search
         Route::get('/search', [SearchController::class, 'index']);

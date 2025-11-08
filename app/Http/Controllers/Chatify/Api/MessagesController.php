@@ -5,16 +5,30 @@ namespace App\Http\Controllers\Chatify\Api;
 use App\Models\ChFavorite as Favorite;
 use App\Models\ChMessage as Message;
 use App\Models\User;
-use Chatify\Facades\ChatifyMessenger as Chatify;
+use App\Facades\ChatifyMessenger as Chatify;
+use App\NotificationType;
+use App\Services\NotificationService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Str;
 
 class MessagesController extends Controller
 {
+    protected ?NotificationService $notificationService = null;
+
+    public function __construct()
+    {
+        // Inject notification service if available
+        try {
+            $this->notificationService = app(NotificationService::class);
+        } catch (\Exception $e) {
+            // Service not available, notifications will be skipped
+            $this->notificationService = null;
+        }
+    }
     protected $perPage = 30;
 
     /**
@@ -145,6 +159,9 @@ class MessagesController extends Controller
                     'to_id' => $request['id'],
                     'message' => $messageData,
                 ]);
+                
+                // Send push notification
+                $this->sendMessageNotification($request['id'], $messageData);
             }
         }
 
@@ -155,6 +172,50 @@ class MessagesController extends Controller
             'message' => $messageData ?? [],
             'tempID' => $request['temporaryMsgId'],
         ]);
+    }
+
+    /**
+     * Send push notification for new message.
+     */
+    protected function sendMessageNotification($recipientId, $messageData)
+    {
+        if (!$this->notificationService) {
+            return;
+        }
+
+        try {
+            $recipient = \App\Models\User::find($recipientId);
+            
+            if (!$recipient || !$recipient->fcm_token) {
+                return;
+            }
+
+            $sender = Auth::user();
+            $messageBody = $messageData['message'] ?? 'Sent an attachment';
+            
+            // Truncate message for notification
+            if (strlen($messageBody) > 100) {
+                $messageBody = substr($messageBody, 0, 100) . '...';
+            }
+
+            $this->notificationService->send(
+                $recipient,
+                NotificationType::MESSAGE_RECEIVED,
+                [
+                    'title' => 'New Message',
+                    'body' => $sender->name . ': ' . $messageBody,
+                    'sender_id' => $sender->id,
+                    'sender_name' => $sender->name,
+                    'sender_avatar' => $sender->avatar,
+                    'message_id' => $messageData['id'] ?? null,
+                    'conversation_id' => $sender->id, // In chatify, conversation is identified by sender ID
+                    'avatar' => $sender->avatar,
+                ],
+                ['database', 'push']
+            );
+        } catch (\Exception $e) {
+            \Log::error('Failed to send message notification: ' . $e->getMessage());
+        }
     }
 
     /**

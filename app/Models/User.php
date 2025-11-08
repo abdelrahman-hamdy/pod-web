@@ -34,6 +34,9 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
         'name',
         'email',
         'password',
+        'fcm_token',
+        'device_type',
+        'device_info',
         'phone',
         'city',
         'country',
@@ -95,6 +98,7 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
             'profile_onboarding_seen' => 'boolean',
             'is_active' => 'boolean',
             'active_status' => 'boolean',
+            'device_info' => 'array',
         ];
     }
 

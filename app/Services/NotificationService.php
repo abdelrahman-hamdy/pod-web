@@ -12,10 +12,21 @@ use Illuminate\Notifications\DatabaseNotification;
 class NotificationService
 {
     protected $firebaseService;
+    protected $mobileService;
 
     public function __construct(FirebaseNotificationService $firebaseService)
     {
         $this->firebaseService = $firebaseService;
+        // Mobile service will be injected when needed
+        $this->mobileService = null;
+    }
+
+    /**
+     * Set mobile notification service.
+     */
+    public function setMobileService($mobileService): void
+    {
+        $this->mobileService = $mobileService;
     }
 
     /**
@@ -127,7 +138,13 @@ class NotificationService
             return;
         }
 
-        $this->firebaseService->sendNotification($user->fcm_token, $type, $data);
+        // Use mobile service if available for enhanced mobile notifications
+        if ($this->mobileService) {
+            $this->mobileService->sendMobileNotification($user, $type, $data);
+        } else {
+            // Fallback to basic Firebase notification
+            $this->firebaseService->sendEnhancedMobileNotification($user->fcm_token, $type, $data);
+        }
     }
 
     /**

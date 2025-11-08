@@ -121,6 +121,163 @@ class FirebaseNotificationService
     }
 
     /**
+     * Send enhanced mobile notification with navigation payload.
+     */
+    public function sendEnhancedMobileNotification(string $fcmToken, NotificationType $type, array $data): bool
+    {
+        if (! $this->messaging) {
+            Log::warning('Firebase messaging not initialized, skipping push notification');
+            return false;
+        }
+
+        try {
+            $notification = Notification::create(
+                $data['title'] ?? $this->getDefaultTitle($type),
+                $data['body'] ?? ''
+            );
+
+            // Build enhanced data payload for mobile
+            $dataPayload = [
+                'notification_type' => $type->value,
+                'category' => $type->category(),
+                'timestamp' => $data['timestamp'] ?? now()->toIso8601String(),
+                'navigation' => json_encode($data['navigation'] ?? []),
+                'actor' => json_encode($data['actor'] ?? null),
+                'badge_count' => (string)($data['badge_count'] ?? 0),
+                'sound' => $data['sound'] ?? 'default',
+                'priority' => $data['priority'] ?? 'normal',
+            ];
+
+            // Add specific IDs if available
+            foreach (['post_id', 'event_id', 'job_id', 'hackathon_id', 'application_id', 'team_id', 'user_id'] as $key) {
+                if (isset($data[$key])) {
+                    $dataPayload[$key] = (string)$data[$key];
+                }
+            }
+
+            // Build message
+            $message = CloudMessage::withTarget('token', $fcmToken)
+                ->withNotification($notification)
+                ->withData($dataPayload);
+
+            // Enhanced Android configuration
+            $androidConfig = AndroidConfig::fromArray([
+                'priority' => $data['priority'] === 'high' ? 'high' : 'normal',
+                'notification' => [
+                    'sound' => $data['sound'] ?? 'default',
+                    'channel_id' => $type->category(),
+                    'tag' => $type->value,
+                    'color' => '#4F46E5', // Primary brand color
+                    'default_sound' => true,
+                    'default_vibrate_timings' => true,
+                    'default_light_settings' => true,
+                ],
+                'data' => $dataPayload,
+            ]);
+            $message = $message->withAndroidConfig($androidConfig);
+
+            // Enhanced iOS configuration
+            $apnsConfig = ApnsConfig::fromArray([
+                'headers' => [
+                    'apns-priority' => $data['priority'] === 'high' ? '10' : '5',
+                    'apns-push-type' => 'alert',
+                ],
+                'payload' => [
+                    'aps' => [
+                        'alert' => [
+                            'title' => $data['title'] ?? $this->getDefaultTitle($type),
+                            'body' => $data['body'] ?? '',
+                            'subtitle' => $data['subtitle'] ?? null,
+                        ],
+                        'badge' => $data['badge_count'] ?? 0,
+                        'sound' => $data['sound'] ?? 'default',
+                        'category' => $type->category(),
+                        'thread-id' => $type->category(),
+                        'mutable-content' => 1,
+                        'content-available' => 1,
+                    ],
+                    'navigation' => $data['navigation'] ?? [],
+                    'actor' => $data['actor'] ?? null,
+                ],
+            ]);
+            $message = $message->withApnsConfig($apnsConfig);
+
+            $result = $this->messaging->send($message);
+
+            Log::info('Enhanced mobile notification sent successfully', [
+                'type' => $type->value,
+                'message_id' => $result,
+                'user_token' => substr($fcmToken, 0, 10) . '...',
+            ]);
+
+            return true;
+        } catch (\Exception $e) {
+            Log::error('Failed to send enhanced mobile notification', [
+                'type' => $type->value,
+                'error' => $e->getMessage(),
+            ]);
+
+            return false;
+        }
+    }
+
+    /**
+     * Subscribe a token to a topic.
+     */
+    public function subscribeToTopic(string $token, string $topic): bool
+    {
+        if (! $this->messaging) {
+            return false;
+        }
+
+        try {
+            $this->messaging->subscribeToTopic([$token], $topic);
+            
+            Log::info('Subscribed to Firebase topic', [
+                'topic' => $topic,
+                'token' => substr($token, 0, 10) . '...',
+            ]);
+            
+            return true;
+        } catch (\Exception $e) {
+            Log::error('Failed to subscribe to topic', [
+                'topic' => $topic,
+                'error' => $e->getMessage(),
+            ]);
+            
+            return false;
+        }
+    }
+
+    /**
+     * Unsubscribe a token from a topic.
+     */
+    public function unsubscribeFromTopic(string $token, string $topic): bool
+    {
+        if (! $this->messaging) {
+            return false;
+        }
+
+        try {
+            $this->messaging->unsubscribeFromTopic([$token], $topic);
+            
+            Log::info('Unsubscribed from Firebase topic', [
+                'topic' => $topic,
+                'token' => substr($token, 0, 10) . '...',
+            ]);
+            
+            return true;
+        } catch (\Exception $e) {
+            Log::error('Failed to unsubscribe from topic', [
+                'topic' => $topic,
+                'error' => $e->getMessage(),
+            ]);
+            
+            return false;
+        }
+    }
+
+    /**
      * Send push notification to multiple users.
      */
     public function sendBatchNotifications(array $fcmTokens, NotificationType $type, array $data): array
