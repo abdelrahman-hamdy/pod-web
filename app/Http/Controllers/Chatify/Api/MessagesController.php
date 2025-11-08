@@ -53,6 +53,7 @@ class MessagesController extends Controller
         // send the response
         return Response::json([
             'favorite' => $favorite,
+            'is_pinned' => (bool) $favorite,
             'fetch' => $fetch ?? null,
             'user_avatar' => $userAvatar ?? null,
         ]);
@@ -206,44 +207,110 @@ class MessagesController extends Controller
      */
     public function getContacts(Request $request)
     {
-        $authId = Auth::user()->id;
+        $authId = Auth::id();
         $perPage = $request->per_page ?? $this->perPage;
 
-        // Build a subquery that finds the latest message timestamp per counterpart user
-        $incoming = Message::select(
-            'from_id as user_id',
-            DB::raw('MAX(created_at) as last_at')
-        )
+        $latestMessageIds = Message::query()
+            ->selectRaw('CASE WHEN from_id = ? THEN to_id ELSE from_id END AS contact_id', [$authId])
+            ->selectRaw('MAX(id) AS last_message_id')
+            ->where(function ($query) use ($authId) {
+                $query->where('from_id', $authId)
+                    ->orWhere('to_id', $authId);
+            })
+            ->groupBy('contact_id');
+
+        $unreadCounts = Message::query()
+            ->selectRaw('from_id AS contact_id, COUNT(*) AS unread_count')
             ->where('to_id', $authId)
+            ->where('seen', 0)
             ->groupBy('from_id');
 
-        $outgoing = Message::select(
-            'to_id as user_id',
-            DB::raw('MAX(created_at) as last_at')
-        )
-            ->where('from_id', $authId)
-            ->groupBy('to_id');
-
-        // Union both directions and aggregate again to get the absolute latest per user
-        $union = $incoming->unionAll($outgoing);
-
-        $latestPerUser = DB::query()
-            ->fromSub($union, 'm')
-            ->select('user_id', DB::raw('MAX(last_at) as last_at'))
-            ->groupBy('user_id');
-
-        // Join the latest-per-user with users and paginate
-        $users = User::joinSub($latestPerUser, 'latest', function ($join) {
-            $join->on('users.id', '=', 'latest.user_id');
-        })
+        $contacts = User::query()
+            ->joinSub($latestMessageIds, 'latest', function ($join) {
+                $join->on('users.id', '=', 'latest.contact_id');
+            })
+            ->leftJoin('ch_messages as last_message', 'last_message.id', '=', 'latest.last_message_id')
+            ->leftJoin('ch_favorites as pinned', function ($join) use ($authId) {
+                $join->on('pinned.favorite_id', '=', 'users.id')
+                    ->where('pinned.user_id', '=', $authId);
+            })
+            ->leftJoinSub($unreadCounts, 'unread', function ($join) {
+                $join->on('users.id', '=', 'unread.contact_id');
+            })
             ->where('users.id', '!=', $authId)
-            ->orderBy('latest.last_at', 'desc')
+            ->select([
+                'users.*',
+                'latest.last_message_id',
+                DB::raw('COALESCE(unread.unread_count, 0) as unread_count'),
+                DB::raw('pinned.id as pinned_id'),
+            ])
+            ->orderByRaw('CASE WHEN pinned.id IS NULL THEN 1 ELSE 0 END')
+            ->orderByDesc('last_message.created_at')
             ->paginate($perPage);
 
+        $messageMap = Message::query()
+            ->whereIn('id', $contacts->getCollection()->pluck('last_message_id')->filter()->all())
+            ->get()
+            ->keyBy('id');
+
+        $formatted = $contacts->getCollection()->map(function (User $contact) use ($messageMap, $authId) {
+            $userData = collect($contact->only([
+                'id',
+                'first_name',
+                'last_name',
+                'name',
+                'email',
+                'email_verified_at',
+                'phone',
+                'city',
+                'country',
+                'gender',
+                'bio',
+                'title',
+                'company',
+                'avatar',
+                'avatar_color',
+                'skills',
+                'experience_level',
+                'education',
+                'portfolio_links',
+                'linkedin_url',
+                'github_url',
+                'twitter_url',
+                'website_url',
+                'profile_views',
+                'role',
+                'profile_completed',
+                'profile_onboarding_seen',
+                'is_active',
+                'active_status',
+                'created_at',
+                'updated_at',
+                'fcm_token',
+            ]));
+
+            $userWithAvatar = Chatify::getUserWithAvatar($contact->replicate());
+            $userData->put('avatar', $userWithAvatar->avatar);
+
+            $lastMessage = null;
+            if ($contact->last_message_id && $messageMap->has($contact->last_message_id)) {
+                $lastMessage = Chatify::parseMessage($messageMap->get($contact->last_message_id));
+            }
+
+            return [
+                'user' => $userData->toArray(),
+                'last_message' => $lastMessage,
+                'unread_count' => (int) ($contact->unread_count ?? 0),
+                'is_pinned' => ! is_null($contact->pinned_id),
+                // Backwards compatibility for older clients expecting is_favorite
+                'is_favorite' => ! is_null($contact->pinned_id),
+            ];
+        });
+
         return response()->json([
-            'contacts' => $users->items(),
-            'total' => $users->total() ?? 0,
-            'last_page' => $users->lastPage() ?? 1,
+            'contacts' => $formatted->values(),
+            'total' => $contacts->total() ?? 0,
+            'last_page' => $contacts->lastPage() ?? 1,
         ], 200);
     }
 
@@ -262,6 +329,7 @@ class MessagesController extends Controller
         // send the response
         return Response::json([
             'status' => @$favoriteStatus,
+            'is_pinned' => (bool) $favoriteStatus,
         ], 200);
     }
 
@@ -280,6 +348,7 @@ class MessagesController extends Controller
         return Response::json([
             'total' => count($favorites),
             'favorites' => $favorites ?? [],
+            'pinned' => $favorites ?? [],
         ], 200);
     }
 
@@ -291,23 +360,67 @@ class MessagesController extends Controller
     public function search(Request $request)
     {
         $input = trim((string) $request->input('input', ''));
-        $perPage = $request->per_page ?? $this->perPage;
+        $perPage = (int) ($request->per_page ?? $this->perPage);
 
-        $paginator = User::where('id', '!=', Auth::user()->id)
-            ->where('name', 'LIKE', "%{$input}%")
+        if ($input === '') {
+            return Response::json([
+                'records' => [],
+                'total' => 0,
+                'current_page' => 1,
+                'last_page' => 1,
+                'per_page' => $perPage,
+                'has_more' => false,
+            ], 200);
+        }
+
+        $columns = [
+            'id',
+            'name',
+            'email',
+            'avatar',
+            'avatar_color',
+            'active_status',
+            'title',
+            'company',
+            'city',
+            'country',
+        ];
+
+        $paginator = User::select($columns)
+            ->where('id', '!=', Auth::user()->id)
+            ->where(function ($query) use ($input) {
+                $query->where('name', 'LIKE', "%{$input}%")
+                    ->orWhere('email', 'LIKE', "%{$input}%");
+            })
+            ->orderByRaw('LOWER(name)')
             ->paginate($perPage);
 
-        $items = array_map(function ($user) {
-            $withAvatar = Chatify::getUserWithAvatar($user);
-            return array_merge($user->toArray(), [
-                'avatar' => $withAvatar->avatar ?? null,
-            ]);
-        }, $paginator->items());
+        $items = collect($paginator->items())
+            ->map(function ($user) {
+                $withAvatar = Chatify::getUserWithAvatar($user);
+
+                return [
+                    'id' => $withAvatar->id,
+                    'name' => $withAvatar->name,
+                    'email' => $withAvatar->email,
+                    'avatar' => $withAvatar->avatar ?? null,
+                    'avatar_color' => $withAvatar->avatar_color ?? null,
+                    'active_status' => (bool) $withAvatar->active_status,
+                    'title' => $withAvatar->title,
+                    'company' => $withAvatar->company,
+                    'city' => $withAvatar->city,
+                    'country' => $withAvatar->country,
+                ];
+            })
+            ->values();
 
         return Response::json([
             'records' => $items,
             'total' => $paginator->total(),
+            'current_page' => $paginator->currentPage(),
             'last_page' => $paginator->lastPage(),
+            'per_page' => $paginator->perPage(),
+            'has_more' => $paginator->hasMorePages(),
         ], 200);
     }
 
