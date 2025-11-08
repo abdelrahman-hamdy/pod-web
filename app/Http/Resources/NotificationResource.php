@@ -14,12 +14,12 @@ class NotificationResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $data = $this->data;
+        $data = $this->data ?? [];
         
         return [
             'id' => $this->id,
             'user_id' => $this->notifiable_id,
-            'type' => $this->mapNotificationType($this->type),
+            'type' => $this->mapNotificationType($this->type ?? ''),
             'title' => $this->extractTitle($data),
             'body' => $this->extractBody($data),
             'image' => $data['image'] ?? null,
@@ -28,9 +28,9 @@ class NotificationResource extends JsonResource
             
             // Two-level read system
             'is_read' => !is_null($this->read_at),
-            'is_viewed' => !is_null($this->viewed_at),
+            'is_viewed' => method_exists($this, 'getAttribute') ? !is_null($this->getAttribute('viewed_at')) : false,
             'read_at' => $this->read_at?->toISOString(),
-            'viewed_at' => $this->viewed_at?->toISOString(),
+            'viewed_at' => method_exists($this, 'getAttribute') ? $this->getAttribute('viewed_at')?->toISOString() : null,
             
             // Actor information for avatar and user context
             'actor' => [
