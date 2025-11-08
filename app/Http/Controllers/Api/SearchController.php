@@ -54,11 +54,8 @@ class SearchController extends BaseApiController
             $results['users'] = UserResource::collection($this->searchUsers($query, $filters));
         }
 
-        $totalResults = collect($results)->sum(fn ($items) => count($items));
-
         return $this->successResponse([
             'results' => $results,
-            'total' => $totalResults,
             'query' => $query,
             'type' => $type,
         ]);
