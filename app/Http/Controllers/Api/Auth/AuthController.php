@@ -6,6 +6,7 @@ use App\AvatarColor;
 use App\Http\Controllers\Api\BaseApiController;
 use App\Http\Resources\UserResource;
 use App\Models\User;
+use App\Models\UserNotificationPreference;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -34,6 +35,24 @@ class AuthController extends BaseApiController
             'password' => Hash::make($validated['password']),
             'is_active' => true,
             'avatar_color' => AvatarColor::random()->value,
+        ]);
+
+        // Create default notification preferences for the new user
+        UserNotificationPreference::create([
+            'user_id' => $user->id,
+            'email_notifications' => true,
+            'push_notifications' => true,
+            'in_app_notifications' => true,
+            'notification_types' => [
+                'social' => true,
+                'events' => true,
+                'jobs' => true,
+                'hackathons' => true,
+                'internships' => true,
+                'messages' => true,
+                'account' => true,
+                'admin' => true,
+            ],
         ]);
 
         event(new Registered($user));
