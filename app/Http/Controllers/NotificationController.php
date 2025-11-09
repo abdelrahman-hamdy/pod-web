@@ -39,7 +39,7 @@ class NotificationController extends Controller
         if ($request->expectsJson()) {
             return response()->json([
                 'success' => true,
-                'data' => \App\Http\Resources\NotificationResource::collection($notifications->items()),
+                'data' => \App\Http\Resources\NotificationResource::collection($notifications->items())->resolve(),
                 'meta' => [
                     'current_page' => $notifications->currentPage(),
                     'from' => $notifications->firstItem(),
@@ -203,7 +203,7 @@ class NotificationController extends Controller
 
         return response()->json([
             'success' => true,
-            'notifications' => \App\Http\Resources\NotificationResource::collection($notifications),
+            'notifications' => \App\Http\Resources\NotificationResource::collection($notifications)->resolve(),
             'unread_count' => $unreadCount,
             'has_more' => $notifications->count() === $limit,
         ]);

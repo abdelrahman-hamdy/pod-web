@@ -29,9 +29,9 @@ class NotificationResource extends JsonResource
             
             // Two-level read system
             'is_read' => !is_null($this->read_at),
-            'is_viewed' => method_exists($this, 'getAttribute') ? !is_null($this->getAttribute('viewed_at')) : false,
+            'is_viewed' => !is_null($this->viewed_at ?? null),
             'read_at' => $this->read_at?->toISOString(),
-            'viewed_at' => method_exists($this, 'getAttribute') ? $this->getAttribute('viewed_at')?->toISOString() : null,
+            'viewed_at' => $this->viewed_at?->toISOString() ?? null,
             
             // Actor information for avatar and user context
             'actor' => [
