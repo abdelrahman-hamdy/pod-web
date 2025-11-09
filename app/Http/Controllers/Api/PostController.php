@@ -4,11 +4,19 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Resources\PostResource;
 use App\Models\Post;
+use App\NotificationType;
+use App\Services\NotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class PostController extends BaseApiController
 {
+    protected NotificationService $notificationService;
+
+    public function __construct(NotificationService $notificationService)
+    {
+        $this->notificationService = $notificationService;
+    }
     /**
      * Display a listing of posts.
      */
@@ -213,6 +221,23 @@ class PostController extends BaseApiController
             'user_id' => $user->id,
         ]);
         $post->increment('likes_count');
+
+        // Send notification to post owner (if someone else liked their post)
+        if ($post->user_id !== $user->id) {
+            $this->notificationService->send(
+                $post->user,
+                NotificationType::POST_LIKED,
+                [
+                    'title' => 'New Like',
+                    'body' => $user->name.' liked your post',
+                    'post_id' => $post->id,
+                    'liker_id' => $user->id,
+                    'liker_name' => $user->name,
+                    'avatar' => $user->avatar,
+                ],
+                ['database', 'push']
+            );
+        }
 
         return $this->successResponse([
             'liked' => true,

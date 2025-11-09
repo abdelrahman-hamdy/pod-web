@@ -5,11 +5,19 @@ namespace App\Http\Controllers\Api;
 use App\Http\Resources\CommentResource;
 use App\Models\Comment;
 use App\Models\Post;
+use App\NotificationType;
+use App\Services\NotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class CommentController extends BaseApiController
 {
+    protected NotificationService $notificationService;
+
+    public function __construct(NotificationService $notificationService)
+    {
+        $this->notificationService = $notificationService;
+    }
     /**
      * Display comments for a post.
      */
@@ -44,9 +52,10 @@ class CommentController extends BaseApiController
             }
         }
 
+        $user = $request->user();
         $comment = Comment::create([
             'post_id' => $post->id,
-            'user_id' => $request->user()->id,
+            'user_id' => $user->id,
             'content' => $validated['content'],
             'parent_id' => $validated['parent_id'] ?? null,
             'is_approved' => true, // Auto-approve for now
@@ -54,6 +63,44 @@ class CommentController extends BaseApiController
 
         $post->incrementComments();
         $comment->load('user');
+
+        // Send notification to relevant users
+        if ($validated['parent_id'] ?? null) {
+            // Reply to comment
+            $parentComment = Comment::find($validated['parent_id']);
+            if ($parentComment && $parentComment->user_id !== $user->id) {
+                $this->notificationService->send(
+                    $parentComment->user,
+                    NotificationType::COMMENT_REPLY,
+                    [
+                        'title' => 'New Reply',
+                        'body' => $user->name.' replied to your comment',
+                        'post_id' => $post->id,
+                        'comment_id' => $comment->id,
+                        'replier_id' => $user->id,
+                        'replier_name' => $user->name,
+                        'avatar' => $user->avatar,
+                    ],
+                    ['database', 'push']
+                );
+            }
+        } elseif ($post->user_id !== $user->id) {
+            // New comment on post
+            $this->notificationService->send(
+                $post->user,
+                NotificationType::COMMENT_ADDED,
+                [
+                    'title' => 'New Comment',
+                    'body' => $user->name.' commented on your post',
+                    'post_id' => $post->id,
+                    'comment_id' => $comment->id,
+                    'commenter_id' => $user->id,
+                    'commenter_name' => $user->name,
+                    'avatar' => $user->avatar,
+                ],
+                ['database', 'push']
+            );
+        }
 
         return $this->successResponse(new CommentResource($comment), 'Comment added successfully', 201);
     }
