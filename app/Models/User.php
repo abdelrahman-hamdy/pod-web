@@ -119,6 +119,25 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
     }
 
     /**
+     * Accessor to automatically format avatar field to full URL.
+     * This ensures avatar field returns full URL instead of just the path.
+     */
+    public function getAvatarAttribute($value): ?string
+    {
+        if (empty($value)) {
+            return null;
+        }
+
+        // If it's already a full URL, return as-is
+        if (str_starts_with($value, 'http://') || str_starts_with($value, 'https://')) {
+            return $value;
+        }
+
+        // Convert to full URL using helper
+        return uploaded_file($value);
+    }
+
+    /**
      * Check if profile is complete.
      */
     public function isProfileComplete(): bool
