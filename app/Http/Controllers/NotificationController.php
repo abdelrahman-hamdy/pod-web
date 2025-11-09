@@ -34,12 +34,12 @@ class NotificationController extends Controller
         }
 
         $perPage = (int) $request->get('per_page', 20);
-        $notifications = $query->paginate($perPage);
+        $notifications = $query->latest()->paginate($perPage);
 
         if ($request->expectsJson()) {
             return response()->json([
                 'success' => true,
-                'data' => $notifications->items(),
+                'data' => \App\Http\Resources\NotificationResource::collection($notifications->items()),
                 'meta' => [
                     'current_page' => $notifications->currentPage(),
                     'from' => $notifications->firstItem(),
@@ -203,17 +203,7 @@ class NotificationController extends Controller
 
         return response()->json([
             'success' => true,
-            'notifications' => $notifications->map(function ($notification) {
-                return [
-                    'id' => $notification->id,
-                    'type' => $notification->type,
-                    'data' => $notification->data,
-                    'read_at' => $notification->read_at,
-                    'viewed_at' => method_exists($notification, 'getAttribute') ? $notification->getAttribute('viewed_at') : null,
-                    'created_at' => $notification->created_at,
-                    'time_ago' => $notification->created_at->diffForHumans(),
-                ];
-            }),
+            'notifications' => \App\Http\Resources\NotificationResource::collection($notifications),
             'unread_count' => $unreadCount,
             'has_more' => $notifications->count() === $limit,
         ]);

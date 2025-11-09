@@ -53,46 +53,46 @@
             <!-- Notifications -->
             <template x-for="notification in notifications" :key="notification.id">
                 <div class="border-b border-slate-100 last:border-b-0 hover:bg-slate-50 transition-colors">
-                    <a :href="notification.data.click_action || '#'" 
-                       @click.prevent="handleNotificationClick(notification.id, notification.data.click_action)"
+                    <a :href="notification.action_url || '#'"
+                       @click.prevent="handleNotificationClick(notification.id, notification.action_url)"
                        class="flex items-start px-4 py-3 group block"
                        :class="{
-                           'bg-indigo-50': !notification.read_at && !notification.viewed_at,
-                           'bg-blue-50': !notification.read_at && notification.viewed_at
+                           'bg-indigo-50': !notification.is_read && !notification.is_viewed,
+                           'bg-blue-50': !notification.is_read && notification.is_viewed
                        }">
                         <!-- User Avatar with Overlay Icon -->
                         <div class="flex-shrink-0 mr-3 relative">
                             <div class="w-10 h-10 rounded-full overflow-hidden border-2 border-white">
                                 <!-- Avatar Image or Initials -->
-                                <template x-if="notification.data.actor_avatar && notification.data.actor_avatar !== 'null' && notification.data.actor_avatar !== ''">
-                                    <img :src="notification.data.actor_avatar" 
-                                         :alt="notification.data.actor_name || 'User'"
+                                <template x-if="notification.actor && notification.actor.avatar && notification.actor.avatar !== 'null' && notification.actor.avatar !== ''">
+                                    <img :src="notification.actor.avatar"
+                                         :alt="notification.actor.name || 'User'"
                                          class="w-full h-full object-cover">
                                 </template>
-                                <template x-if="!notification.data.actor_avatar || notification.data.actor_avatar === 'null' || notification.data.actor_avatar === ''">
+                                <template x-if="!notification.actor || !notification.actor.avatar || notification.actor.avatar === 'null' || notification.actor.avatar === ''">
                                     <div class="w-full h-full flex items-center justify-center font-semibold text-sm"
-                                         :class="notification.data.actor_avatar_color || 'bg-slate-100 text-slate-600'">
-                                        <span x-text="getInitials(notification.data.actor_name || 'User')"></span>
+                                         :class="(notification.actor && notification.actor.avatar_color) || 'bg-slate-100 text-slate-600'">
+                                        <span x-text="getInitials((notification.actor && notification.actor.name) || 'User')"></span>
                                     </div>
                                 </template>
                             </div>
-                            
+
                             <!-- Action Icon Overlay -->
                             <div class="absolute -bottom-1.5 -right-1.5 w-6 h-6 rounded-full flex items-center justify-center border-2 border-white"
-                                 :class="notification.data.overlay_background_color || 'bg-indigo-500'">
-                                <i :class="(notification.data.action_icon || 'ri-notification-3-fill') + ' text-xs ' + (notification.data.icon_color || 'text-white')"></i>
+                                 :class="notification.overlay_background_color || 'bg-indigo-500'">
+                                <i :class="(notification.action_icon || 'ri-notification-3-fill') + ' text-xs ' + (notification.icon_color || 'text-white')"></i>
                             </div>
                         </div>
-                        
+
                         <!-- Content -->
                         <div class="flex-1 min-w-0">
                             <p class="text-sm text-slate-900 font-medium line-clamp-2 group-hover:text-indigo-600 transition-colors"
-                               x-text="notification.data.body || notification.data.message"></p>
-                            <p class="text-xs text-slate-500 mt-1" x-text="formatTime(notification.created_at)"></p>
+                               x-text="notification.body || notification.title"></p>
+                            <p class="text-xs text-slate-500 mt-1" x-text="notification.time_ago || formatTime(notification.created_at)"></p>
                         </div>
-                        
+
                         <!-- Read Status Indicator -->
-                        <div x-show="!notification.read_at" class="flex-shrink-0 ml-2">
+                        <div x-show="!notification.is_read" class="flex-shrink-0 ml-2">
                             <div class="w-2 h-2 bg-indigo-600 rounded-full"></div>
                         </div>
                     </a>
@@ -143,45 +143,45 @@
                 
                 <template x-for="notification in notifications" :key="notification.id">
                     <div class="border-b border-slate-100 last:border-b-0 hover:bg-slate-50 transition-colors">
-                        <a :href="notification.data.click_action || '#'" 
-                           @click.prevent="handleNotificationClick(notification.id, notification.data.click_action)"
+                        <a :href="notification.action_url || '#'"
+                           @click.prevent="handleNotificationClick(notification.id, notification.action_url)"
                            class="flex items-start px-4 py-3 group block"
                            :class="{
-                               'bg-indigo-50': !notification.read_at && !notification.viewed_at,
-                               'bg-blue-50': !notification.read_at && notification.viewed_at
+                               'bg-indigo-50': !notification.is_read && !notification.is_viewed,
+                               'bg-blue-50': !notification.is_read && notification.is_viewed
                            }">
                             <!-- User Avatar with Overlay Icon -->
                             <div class="flex-shrink-0 mr-3 relative">
                                 <div class="w-10 h-10 rounded-full overflow-hidden border-2 border-white">
-                                    <template x-if="notification.data.actor_avatar && notification.data.actor_avatar !== 'null' && notification.data.actor_avatar !== ''">
-                                        <img :src="notification.data.actor_avatar" 
-                                             :alt="notification.data.actor_name || 'User'"
+                                    <template x-if="notification.actor && notification.actor.avatar && notification.actor.avatar !== 'null' && notification.actor.avatar !== ''">
+                                        <img :src="notification.actor.avatar"
+                                             :alt="notification.actor.name || 'User'"
                                              class="w-full h-full object-cover">
                                     </template>
-                                    <template x-if="!notification.data.actor_avatar || notification.data.actor_avatar === 'null' || notification.data.actor_avatar === ''">
+                                    <template x-if="!notification.actor || !notification.actor.avatar || notification.actor.avatar === 'null' || notification.actor.avatar === ''">
                                         <div class="w-full h-full flex items-center justify-center font-semibold text-sm"
-                                             :class="notification.data.actor_avatar_color || 'bg-slate-100 text-slate-600'">
-                                            <span x-text="getInitials(notification.data.actor_name || 'User')"></span>
+                                             :class="(notification.actor && notification.actor.avatar_color) || 'bg-slate-100 text-slate-600'">
+                                            <span x-text="getInitials((notification.actor && notification.actor.name) || 'User')"></span>
                                         </div>
                                     </template>
                                 </div>
-                                
+
                                 <!-- Action Icon Overlay -->
                                 <div class="absolute -bottom-1.5 -right-1.5 w-6 h-6 rounded-full flex items-center justify-center border-2 border-white"
-                                     :class="notification.data.overlay_background_color || 'bg-indigo-500'">
-                                    <i :class="(notification.data.action_icon || 'ri-notification-3-fill') + ' text-xs ' + (notification.data.icon_color || 'text-white')"></i>
+                                     :class="notification.overlay_background_color || 'bg-indigo-500'">
+                                    <i :class="(notification.action_icon || 'ri-notification-3-fill') + ' text-xs ' + (notification.icon_color || 'text-white')"></i>
                                 </div>
                             </div>
-                            
+
                             <!-- Content -->
                             <div class="flex-1 min-w-0">
                                 <p class="text-sm text-slate-900 font-medium line-clamp-2 group-hover:text-indigo-600 transition-colors"
-                                   x-text="notification.data.body || notification.data.message"></p>
-                                <p class="text-xs text-slate-500 mt-1" x-text="formatTime(notification.created_at)"></p>
+                                   x-text="notification.body || notification.title"></p>
+                                <p class="text-xs text-slate-500 mt-1" x-text="notification.time_ago || formatTime(notification.created_at)"></p>
                             </div>
-                            
+
                             <!-- Read Status Indicator -->
-                            <div x-show="!notification.read_at" class="flex-shrink-0 ml-2">
+                            <div x-show="!notification.is_read" class="flex-shrink-0 ml-2">
                                 <div class="w-2 h-2 bg-indigo-600 rounded-full"></div>
                             </div>
                         </a>
@@ -276,15 +276,16 @@
                                 'Accept': 'application/json',
                             },
                         });
-                        
+
                         const data = await response.json();
-                        
+
                         // Update unread count from server response
                         this.unreadCount = data.unread_count || 0;
-                        
+
                         // Update local state - mark all as viewed
                         this.notifications.forEach(notification => {
-                            if (!notification.viewed_at) {
+                            if (!notification.is_viewed) {
+                                notification.is_viewed = true;
                                 notification.viewed_at = new Date().toISOString();
                             }
                         });
@@ -312,14 +313,16 @@
                                 'Content-Type': 'application/json',
                             },
                         });
-                        
+
                         // Update local state
                         const notification = this.notifications.find(n => n.id === notificationId);
                         if (notification) {
+                            notification.is_read = true;
+                            notification.is_viewed = true;
                             notification.read_at = new Date().toISOString();
                             notification.viewed_at = new Date().toISOString();
                         }
-                        
+
                         this.loadUnreadCount();
                     } catch (error) {
                         console.error('Failed to mark notification as read:', error);
@@ -334,13 +337,15 @@
                                 'X-CSRF-TOKEN': '{{ csrf_token() }}',
                             },
                         });
-                        
+
                         // Update local state
                         this.notifications.forEach(notification => {
+                            notification.is_read = true;
+                            notification.is_viewed = true;
                             notification.read_at = new Date().toISOString();
                             notification.viewed_at = new Date().toISOString();
                         });
-                        
+
                         this.loadUnreadCount();
                     } catch (error) {
                         console.error('Failed to mark all as read:', error);
