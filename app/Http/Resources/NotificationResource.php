@@ -30,8 +30,8 @@ class NotificationResource extends JsonResource
             // Two-level read system
             'is_read' => !is_null($this->read_at),
             'is_viewed' => !is_null($this->viewed_at ?? null),
-            'read_at' => $this->read_at?->toISOString(),
-            'viewed_at' => $this->viewed_at?->toISOString() ?? null,
+            'read_at' => $this->formatDateTime($this->read_at),
+            'viewed_at' => $this->formatDateTime($this->viewed_at ?? null),
             
             // Actor information for avatar and user context
             'actor' => [
@@ -92,5 +92,31 @@ class NotificationResource extends JsonResource
     private function extractBody(array $data): string
     {
         return $data['body'] ?? $data['message'] ?? '';
+    }
+
+    /**
+     * Format datetime to ISO string, handling both Carbon instances and string dates
+     */
+    private function formatDateTime($datetime): ?string
+    {
+        if (is_null($datetime)) {
+            return null;
+        }
+
+        // If it's already a string, try to convert to Carbon first
+        if (is_string($datetime)) {
+            try {
+                $datetime = \Carbon\Carbon::parse($datetime);
+            } catch (\Exception $e) {
+                return $datetime; // Return as-is if parsing fails
+            }
+        }
+
+        // If it's a Carbon instance, convert to ISO string
+        if ($datetime instanceof \Carbon\Carbon || $datetime instanceof \DateTimeInterface) {
+            return $datetime->toISOString();
+        }
+
+        return null;
     }
 }
